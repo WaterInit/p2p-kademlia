@@ -1,0 +1,424 @@
+% !TeX spellcheck = de_DE
+% http://detexify.kirelabs.org/classify.html
+\documentclass [10pt,a4paper]{article}
+\usepackage{a4wide}
+\usepackage[ngerman]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{lastpage} % Lade das Paket für die Gesamtseitenzahl
+
+\usepackage{amsmath} %Mathepacket
+
+% Literaturverzeichnis (nur zum hochstellen der Zahlen im Text)
+\usepackage{overcite}
+\renewcommand\citeform[1]{[#1]} % Verweise im Text hochgestellt anzeigen
+
+\usepackage{subcaption} % subfigure
+
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes,shapes.geometric,arrows,fit,calc,positioning,automata,arrows}
+\usepackage{pgfplots} % axis in tikzpicture
+\usepackage{amsmath}
+\usepackage{subcaption} % subfigure
+
+\usepackage{fancyhdr} % Lade das Paket Fancy Header
+\pagestyle{fancy} % Aktiviere das Paket
+% Header
+\fancyhead[L]{
+%\changefont{cmss}{m}{n}
+}
+\fancyhead[OC]{
+%\changefont{cmss}{m}{n}
+Protokolle und Algorithmen der Internetkommunikation
+}
+\fancyhead[R]{
+%\changefont{cmss}{m}{n}
+}
+
+\newcommand*{\titleGP}{\begingroup% Geometric Modeling
+	%\drop=0.1\textheight
+	\centering
+	\vspace*{\baselineskip}
+	\rule{\textwidth}{1.6pt}\vspace*{-\baselineskip}\vspace*{2pt}
+	\rule{\textwidth}{0.4pt}\\[\baselineskip]
+	{\Large Protokolle und Algorithmen der Internetkommunikation \\ schriftliche Ausarbeitung \\[2\baselineskip] Thema: \\[1 em] \textbf{ 
+		Fairness der Aufteilung der Datenrate zwischen Paketflüssen in zwei Szenarien}}
+	\\[0.2\baselineskip]
+	\rule{\textwidth}{0.4pt}\vspace*{-\baselineskip}\vspace{3.2pt}
+	\rule{\textwidth}{1.6pt}\\[\baselineskip]
+	\scshape
+	Wintersemester 2015/2016\par
+	\vspace*{2\baselineskip}
+	erstellt von \\[\baselineskip]
+	{\Large Martin Vogt } \\[5\baselineskip]
+	{\itshape \textbf{Humboldt Universität zu Berlin \\[2\baselineskip]
+		}\par}
+	
+	\includegraphics[scale=0.3]{hu_logo.jpg}\\[2\baselineskip]
+	\vfill
+	%{\scshape year} \\
+	%{\large THE PUBLISHER}\par
+\endgroup}
+% % ----------------------------------------------
+% % ----------------------------------------------
+
+\begin{document}
+\pagenumbering{roman}
+\titleGP
+\newpage
+\tableofcontents %Inhaltsverzeichnis
+
+\newpage
+\pagenumbering{arabic}
+\section{Einführung}
+
+\section{Ziele und relevante Annahmen der Untersuchung}
+	In dieser Arbeit soll die Fairness der Aufteilung der Datenrate zwischen Paketflüssen untersucht werden. Dafür sind zwei konkrete Szenarien vorgesehen. In beiden Fällen sollen ausschließlich die längerfristigen stabilen Zustände untersucht werden. D.h. dass transiente gleich nach dem Start entstehende Zustände und Verhaltensweisen unbetrachtet bleiben sollen. In den Simulationen ist hierfür eine Einschwingdauer von 80 Sekunden, bevor die Messungen beginnen vorgesehen.
+	\\[2ex]
+	
+	\subsection{1. Szenario}
+		\label{1-szenario-ziele}
+		Im ersten Szenario sollen die UDP-Datenraten bei fester Quelldatenrate in einer Doppel-Y-Topologie, wie in Abbildung~\ref{fig:doppel-y-topologie} dargestellt, untersucht werden.
+	
+		\begin{figure}[h!]
+			\begin{center}
+			\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm,semithick]
+				\tikzstyle{every state} = [fill=white,draw=black,text=black]
+				\node[state](a){A};
+				\node[state](b)[below of=a]{B};
+				\node[state](r1)[right of=a,yshift=-1.0cm]{$R_1$};
+				\node[state](r2)[right of=r1,yshift=-1.0cm]{$R_2$};
+				\node[state](c)[below of=r1]{C};
+				\node[state](s)[right of=r2]{S};
+				\path
+				(a) edge node {$r_1$} (r1)
+				(b) edge node {$r_2$} (r1)
+				(c) edge node {$r_3$} (r2)
+				(r1) edge node {$r_4$} (r2)
+				(r2) edge node {$r_5$} (s)
+				;
+			\end{tikzpicture}
+			\caption[Doppel-Y-Topologie]{Doppel-Y-Topologie}
+			\label{fig:doppel-y-topologie}
+			\end{center}
+		\end{figure}
+		In dem in Abbildung~\ref{fig:doppel-y-topologie} dargestellten Szenario soll untersucht werden ob ein Zusammenhang zwischen den verfügbaren Link-Datenraten $r_1,\dots ,r_5$ und dem bei S ankommenden Datenraten existiert.
+		
+		Dabei wird davon ausgegangen, dass jede Quelle dauerhaft mit ihren maximalen Datenraten sendet. Außerdem ist die Latenz auf den einzelnen Links überall gleich $T$. Ein Paket, dass ohne Verzögerung von A nach S versendet wird, wird somit genau $3T$ benötigen. Weiterhin soll geprüft werden, ob T und die Größe der Warteschlangen in den Routern einen Einfluss auf das Ergebnis haben.
+		\begin{itemize}
+			\item variable Größen:
+			\begin{itemize}
+				\item Link-Datenrate: $r_1,r_2,r_3$ und daraus folgen die Senderaten für die Knoten $A_{out},B_{out},C_{out}$
+				\item Link-Datenraten: $r_4 ,r_5$
+				\item Warteschlangen (Puffer) $P_{R_1},P_{R_2}$ in den Routern $R_1,R_2$
+			\end{itemize}
+			\item feste Größen:
+			\begin{itemize}
+				\item maximale Senderate auf allen Knoten ($A=r_1, B=r_2, C=r_3$)
+				\item Latenz pro Link: $T=4$ ms (für alle Links gleich)
+			\end{itemize}
+		\end{itemize}
+		
+		Es sollen mit Hilfe der genannten Annahmen zwei Fragestellungen beantwortet werden:
+		\begin{enumerate}
+			\item Welcher Zusammenhang existiert zwischen $(r_1,\dots ,r_5)$ und $S_{in}$?
+			\item Haben $T$ und $P_{R_1}$, bzw. $P_{R_2}$ einen Einfluss auf $S_{in}$?
+		\end{enumerate}
+		
+	
+	\subsection{2. Szenario}
+		Im zweiten Teil sollen zusätzlich Schiebefenster in den sendenden Knoten betrachtet werden. Dafür wird die Y-Topologie, wie in Abbildung~\ref{fig:y-topologie} dargestellt, genutzt.
+		\begin{figure}[h!]
+			\begin{center}
+				\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.0cm,semithick]
+				\tikzstyle{every state} = [fill=white,draw=black,text=black]
+				\node[state](a){A};
+				\node[state](b)[below of=a]{B};
+				\node[state](r)[right of=a,yshift=-1.0cm]{R};
+				\node[state](s)[right of=r]{S};
+				\path
+				(a) edge node {} (r)
+				(b) edge node {} (r)
+				(r) edge node {$r$} (s)
+				;
+				\end{tikzpicture}
+				\caption[Y-Topologie]{Y-Topologie}
+				\label{fig:y-topologie}
+			\end{center}
+		\end{figure}
+		Es soll auch in diesem Szenario betrachtet werden mit welchen Datenraten die Datenflüsse von $A$ und $B$ bei $S$ ankommen. Die Warteschlange im Router $R$ kann dabei unendlich groß werden. Auch die Datenrate der Links von $A$, bzw. $B$ zum Router $R$ sind als unendlich groß zu betrachten. Nun kommen allerdings die Fenstergrößen $W_1$ für $A$ und $W_2$ für $B$ hinzu. Die Latenz ist auf allen Links wiederum gleich $T$.
+		\begin{itemize}
+			\item variable Größen:
+			\begin{itemize}
+				\item Fenstergröße $W_1$ für $A$
+				\item Fenstergröße $W_2$ für $B$
+				\item Datenrate $r$
+			\end{itemize}
+			\item feste Größen:
+			\begin{itemize}
+				\item Latenz pro Link: $T=4$ ms (für alle Links gleich)
+			\end{itemize}
+			\item nicht betrachtete Größen:
+			\begin{itemize}
+				\item Link-Datenrate zwischen $A$ und $R$: $\infty$
+				\item Link-Datenrate zwischen $B$ und $R$: $\infty$
+				\item Warteschlange in $R$ $(P_R)$: $\infty$
+			\end{itemize}
+		\end{itemize}
+
+		Es sollen mit Hilfe der genannten Annahmen folgende Fragestellungen beantwortet werden:
+		\begin{enumerate}
+			\item Welche Datenrate kommt bei $S$ an $(S_{in})$?
+			\begin{itemize}
+				\item im Zusammenhang mit den Fenstergrößen $W_1$ und $W_2$
+				\item Betrachtung der Fairness
+			\end{itemize}
+		\end{enumerate}
+
+\section{analytische Betrachtung}
+	Im folgenden werden die beiden zuvor beschriebenen Szenarien analytisch betrachtet. Dabei werden mehrere Verhaltensweisen und Zustände beschrieben. Dabei sei ein \glqq stabiler Zustand\grqq{}, ein Zustand in dem in der Theorie und nur unter Betrachtung von Warteschlangen, Datenraten und Sendeleistungen ein Zustand erreicht wird, in dem keine Daten verloren gehen, keine Warteschlangen gefüllt werden und alle Links mit dafür maximaler Datenrate senden. Weiterhin sind die folgenden Untersuchungen rein theoretisch und berücksichtigen keine besonderen Effekte.
+	\subsection{1. Szenario}
+		Wie in Abschnitt~\ref{1-szenario-ziele} angenommen, sind die Sendegeschwindigkeiten der Knoten $A,B$ und $C$ gleich den Übertragungsgeschwindigkeiten auf ihren Links $r_1,\ r_2$ und $r_3$. Somit müssen nur die Links in den Überlegungen einbezogen werden. Die sendenden Knoten senden dann dauerhaft mit der ihnen zur Verfügung gestellten Datenrate.
+		
+		Als erstes werden stabile Zustände betrachtet. Dafür wird zuerst analytisch berechnet, unter welchen Annahmen $S$ alle Daten die von den sendenden Knoten versendet werden empfängt, ohne dass die RTT stark wächst und damit auch ohne die Warteschlangen $P_{R_1}$ und $P_{R_2}$ nicht, bzw. nur minimal zu nutzen.
+		Das ist genau dann der Fall, wenn gilt:
+		\[r_1+r_2\leq r_4 \text{ und } (r_3+r_4\leq r_5 \text{ oder } r_1+r_2+r_3\leq r_5) \]
+		Somit sind alle eingehenden Datenraten pro Knoten insgesamt kleiner, oder gleich der maximal ausgehenden Datenrate des selben Knotens. Für die Datenraten gilt:
+		\[A_{out}+B_{out}+C_{out}= S_{in}\]
+		Die Latenz für $A$ und $B$ beträgt $24$ ms und für $C$ $16$ ms. Angenommen die Datenraten und Übertragungsgeschwindigkeiten werden folgendermaßen gewählt.
+		\begin{align*}
+			r_4 &=r_1+r_2 \\
+			r_5 &=r_3+r_4 \\
+			\Rightarrow S_{in} &=A_{out}+B_{out}+C_{out}
+		\end{align*}
+		Das heißt dass alle gesendeten Daten bei $S$ ankommen und sich keine Warteschlangen in den Routern bilden werden. Nun wird die Datenrate $r_1$ um einen beliebigen Wert $D_{plus}$ erhöht $r_{1_{neu}}=r_{1}+D_{plus}$. Somit gilt:
+		\[\text{für (1): }r_4 < r_{1_{neu}}+r_2\]
+		Daraus folgt, dass $R_1$ nun zwar noch $r_1+r_2$ Mbit/s versendet, aber $r_1+r_2+D_{plus}$ erhält und deshalb nicht mehr alle Daten sofort versenden kann. Somit wird die Warteschlange immer weiter wachsen. Sei $P_{full}$ die Zeit, nach der die Warteschlange voll ist, dann kann bei einer Warteschlange mit $P_{R_1}$ Mbit Speicherplatz mit folgender Formel berechnet werden, wann sie voll ist.
+		\begin{align*}
+			P_{full} &=\frac{P_{R_1}}{r_{1_{neu}}+r_2-r_4} \\
+			&=\frac{P_{R_1}}{r_1+D_{plus}+r_2-r_4} \qquad | r_4=r_1+r_2 \\
+			&=\frac{P_{R_1}}{D_{plus}}
+		\end{align*}
+		Die Zeit hängt somit nur von der Datenmenge ab, die nicht direkt versendet werden kann und der Größe der Warteschlange. Sobald die Warteschlange voll ist werden Pakete verworfen, weshalb längefristig rund $D_{plus}$ Mbit Daten verloren gehen. Da allerdings $P_{r_1}$ von $A$ und $B$ zusammen genutzt werden, werden auch Pakete von beiden verworfen. Dabei wiederum werden von dem Knoten mehr Pakete verloren gehen, der mehr Daten sendet. Weiterhin gilt $r_3+r_4=r_5$, weshalb sich bei $R_2$ keine Warteschlange bilden wird und $S$ immer noch genausoviele Daten erhält wie zuvor. Dabei wird $S$ alle Daten von $C$ erhalten und Daten von $A$ und $B$ werden teilweise fehlen. $S_{in}$ hängt somit nicht allein von den Sendegeschwindigkeiten der sendenden Knoten ab, solange Router dazwischen geschaltet sind. Wird ein Router, bzw. die Datenrate hinter dem Router schon vollständig ausgelastet, verändert sich die Empfangsrate bei $S_{in}$ nicht.
+		
+		Im nächsten Fall wird die Datenrate von $r_3$ hochgesetzt. Es gilt: $r_{3_{neu}}=r_3+D_{plus}$. Nun wird in $P_{R_2}$ das gleiche passieren wie in $P_{R_1}$ im vorigen Fall. Nach der Zeit $\frac{P_{R_2}}{D_{plus}}$ wird die Warteschlange von $R_2$ voll sein. Nun gehen eingehende Daten von den Links $r_3$ und $r_4$ verloren. Zwar wurde auch diesmal nur ein Link verändert, allerdings gehen nun Daten von allen sendenden Knoten verloren, da Daten vom Link $r_4$ über den die Knoten $B$ und $C$ angeschlossen sind, verloren gehen. Bei $S$ wird somit immer noch die gleiche Datenrate ankommen, allerdings werden von allen sendenden Knoten Daten fehlen.
+		
+		Die Warteschlangen in den Routern haben längerfristig keinen Einfluss auf das Ergebnis. Es wird nur länger dauern bis Daten verloren gehen. Auch die Latenz zwischen den Knoten hat keinen Einfluss auf das Ergebnis, da die sendenden Knoten immer weiter Daten mit der gleichen Rate versenden werden.
+		
+	\subsection{2. Szenario}
+	\label{2-szen-analytisch}
+		Im folgenden wird angenommen, dass $A$ und $B$ unendlich schnell Daten senden können und nur durch die Fenstergröße beschränkt werden. Außerdem wird der in der Vorlesung definierte Effekt, dass ein Netzwerk bei mehr als $80\%$ Auslastung anfängt extrem hohe RTT zu erzeugen vorerst ignoriert. $r$ ist die Datenrate, in der die Daten von $A$ und $B$ maximal beim Empfänger ankommen. Für einen stabilen Zustand gilt somit folgende Berechnung.
+		\[A_{out}+B_{out}\leq r\]
+		$A_{out}$ wird dabei über die Fenstergröße $W_1$ und die $RTT_A$ definiert, die wiederum über $T$ definiert wird $(RTT_A=4\cdot T)$.
+		
+		Um zu erfahren wie groß das Fenster $W_1$ mindestens bei gegebenem $T$ und $r$ sein muss ein ständiger Datenfluss erreicht wird kann folgende Formel angewendet werden.
+		\begin{align*}
+			W_{1_{min}} &= RTT\cdot r\qquad | \ RTT=4\cdot T \\
+			&= 4\cdot T\cdot r
+		\end{align*}
+		Es werden falls nur $A$ Daten sendet bei der gegebenen Topologie keine Daten in Wartepuffern sein so lange für $A$ gilt $W_1\leq 4\cdot T\cdot r$. Für $B$ allein gelten die gleichen Aussagen. Falls beide Knoten gleichzeitig senden, müssen sich $A$ und $B$ die Datenrate $r$ teilen.
+		\[W_1+W_2\leq 4\cdot T\cdot r \]
+		
+		Es gelte im folgenden \{$W_1+W_2=4\cdot T\cdot r\ |\ W_1=W_2$\}. Somit ist ein stabilder Zustand erreicht in dem sich beide Sender die Datenrate fair teilen. Nun wird der Sendepuffer $W_1$ von $A$ um \{$W_{plus}\ |\ W_{plus}>0$\} erhöht $(W_{1_{neu}}=W_1+W_{plus})$. Somit werden bei $R$ mehr Daten ankommen, als der Router über $r$ versenden kann. In der Warteschlange von $R$ werden Daten sowohl von $A$, als auch von $B$ ausgebremst, da sich beide Knoten die gleiche Warteschlange teilen und $W_1+W_2>4\cdot T\cdot r$ gilt. Durch diesen Puffer werden alle Daten verspätet bei $S$ ankommen und somit auch die ACKs verspätet bei den Knoten $A$ und $B$. Durch diese Verspätung wird sich die RTT für beide Knoten erhöhen. Da die Fenstergrößen in $A$ und $B$ begrenzt sind, wird die Warteschlange in $R$ nicht unendlich groß werden, sondern langfristig eine stabile Größe annehmen. Die Größe der Warteschlange $P_r$, die angenommen wird sobald ein stabiler Zustand eingetreten ist, lässt sich berechnen indem die von den Knoten gesendete Datenmenge, welche sich aus den Fenstergrößen der beiden Knoten ergeben, mit der Menge der Daten die auf der Leitung liegen und der Menge der Daten dessen ACKs noch nicht bei den Sendern ankamen subtrahiert wird.
+		\[P_r=W_1+W_2-( 4\cdot T\cdot r) \]
+		Auch die resultierende RTT $(RTT_{neu})$ lässt sich berechnen, indem berechnet wird wie lange es dauert die Warteschlange abzuarbeiten und diese Wartezeit zur anfänglichen RTT aufaddiert wird.
+		\begin{align*}
+			RTT_{neu} &=RTT+\frac{P_r}{r} \qquad |\ P_r=W_1+W_2-( 4\cdot T\cdot r),\quad RTT=4\cdot T \\[1ex]
+			&= 4\cdot T+\frac{W_1+W_2-( 4\cdot T\cdot r)}{r}\\[1ex]
+			&= \frac{W_1+W_2+4Tr-4Tr}{r}\\[1ex]
+			&= \frac{W_1+W_2}{r}
+		\end{align*}
+		
+		Es ist erkennbar, dass für die gegebene Topologie die Warteschlange nur von den Fenstergrößen und der Übertragungsrate der Leitung abhängt.
+		
+		In dem eben beschriebenen stabilen Zustand werden, da jeder sendende Knoten alle Daten ohne Warteschlange oder Verluste durchreichen kann, beim empfänger die Daten im Verhältnis $1:1$ von den Sendern ankommen. Wird die Datenrate in beiden Knoten gleichermaßen erhöht, wird sich auch die Warteschlange aufbauen. Um nun erkennen zu können, ob die Daten der beiden Knoten mit fairer Datenrate, im Bezug auf den jeweils anderen sendenden Knoten ankommen, muss die Warteschlange näher betrachtet werden. Die Warteschlange arbeitet annähmlich streng nach dem FIFO Prinzip und verschickt somit das Paket als nächstes, welches am längsten in der Warteschlange ist. Ob die Router wirklich nach FIFO arbeiten, kann später in den Simulationen weiter untersucht werden. Die Reihenfolge der ankommenden Pakete wird somit beibehalten. Empfängt die Warteschlange nun von beiden Sendern genau die gleiche Anzahl an Paketen über die gesamte Zeit, wird $R$ abwechselnd die Pakete an $S$ weiterleiten. Empfängt $R$ aber doppelt so viele Pakete von $B$ als von $A$, werden auch doppelt so viele Pakete von $B$ an $S$ weitergeleitet. Somit wird das Verhältnis der sendenden Datenraten von $A$ und $B$ von $S$ übernommen. Nun kann die bei $S$ ankommende Datenrate der Knoten ($S_{in_A}$ für A und $S_{in_B}$ für B) berechnet werden, sobald $r$ und das Verhältnis zwischen $W_1$ und $W_2$ ($V_{W_1}=$ prozentualer Anteil von $W_1$ und $V_{W_2}$ dementsprechend) bekannt ist.
+		\begin{align*}
+			S_{in_A} &= V_{W_1}\cdot \frac{r}{V_{W_1}+V_{W_2}} & S_{in_B} &= V_{W_2}\cdot \frac{r}{V_{W_1}+V_{W_2}}
+		\end{align*}
+
+\section{Beschreibung der Simulation}
+	Die Simulation wurde mit dem Netzwerksimulator \glqq NS-3\grqq{} erstellt. Darin wurde die jweilige Topologie nachgebaut. Außerdem konnten mit Hilf von \glqq CommandLinec cmd\grqq Parameter in die Simulation einfließen, weshalb diese mit Hilfe eines Shell-Scripts mehrmals und mit verschiedenen Parametern direkt hintereinander gestartet werden konnte. Als Grundlage, vor allem für das zweite Szenario, wurde die vom technischen Lehrstuhl bereitgestellte Musterlösung als Vorlage genutzt und umgebaut.
+	
+	Es wurde die OnOffApplication für die Doppel-Y-Topologie und die WindowClientApplication für die Y-Topologie jeweils für die sendenden Knoten verwendet. Im ersten Szenario wurde damit die Paketgröße auf $512$ Byte festgesetzt. Zur Erstellung der Server wurde die PacketSink-Applikation benutzt. Die Warteschlange in $R$ hat eine Maximalgröße von $2^{32}-1$ Paketen, was eine unendliche Warteschlange für den Simulationszeitraum simulieren soll. In allen Simulationen wurde die Latenz zwischen den Knoten auf $T=4$ ms gesetzt.
+	
+	Alle eingestellten Werte können über Parameter beim Starten der Simulation geändert werden. Somit konnte jede Simulation effizient mit Hilfe einer weiteren Shell-Datei mit verschiedenen Werten ausgeführt werden.
+	
+\section{Simulationsergebnisse}
+	\subsection{1. Szenario}
+		Um die Fairness in diesem Szenario zu testen, werden bei den Simulationen jeweils alle Links bis auf einen auf einen festen Wert gesetzt. Der variable Link wird in jedem Durchlauf erhöht. Somit kann der Anteil der bei $S$ ankommenden Daten gemessen werden. Im fogenden wird allen Links, bis auf dem Variablen, eine Übertragungsgeschwindigkeit von $10$ MBit/s zugewiesen. Der variable Link wird von $1$ Mbit/s bis auf $100$ Mbit/s erhöht. Ziel ist es, zu sehen welche Datenraten beim Server ankommen, wenn Datenraten an verschiedenen Stellen verändert werden.
+	
+		\begin{figure}[[htb]
+			\begin{tikzpicture}[]
+			\begin{axis}
+			[ width=1.0\textwidth,height=0.3\textwidth,
+			legend style={at={(0.0,1.5)}},
+			legend entries={$r_1$,$r_2$,$r_3$},
+			xmin=0,xmax=100,
+			ymin=0,ymax=50,
+			axis lines=left,
+			xlabel={Datenrate von $r_2$ (in Mbit/s},
+			ylabel={bei S eingehende Daten (in \%)},
+			]
+			\addplot[color=red,only marks, mark size=1.0, error bars/.cd,
+			y dir=both,y explicit,error bar style={color=black}]
+			table [x index={0},y index={1}] {./img/same-r-up-r2-incom.csv};
+			\addplot[color=blue,only marks, mark size=1.0, error bars/.cd,
+			y dir=both,y explicit,error bar style={color=black}]
+			table [x index={0},y index={2}] {./img/same-r-up-r2-incom.csv};
+			\addplot[color=green,only marks, mark size=1.0, error bars/.cd,
+			y dir=both,y explicit,error bar style={color=black}]
+			table [x index={0},y index={3}] {./img/same-r-up-r2-incom.csv};
+			\end{axis}
+			\end{tikzpicture}
+			\caption[Anteil an Fenstergröße zum Anteil der ankommenden Daten]{Anteil an Fenstergröße zum Anteil der ankommenden Daten}
+			\label{fig:r-r2-incom}
+		\end{figure}
+		
+		In der Abbildung~\ref{fig:r-r2-incom} ist gut erkennbar, dass beim verändern der Datenrate von $B$ zwar der Knoten $A$ betroffen ist, aber nicht $C$. Von $C$ gehen dauerhaft $50\%$ aller Daten bei $S$ ein. Das liegt an dem Link $r_4$ der mit der gleichen Rate sendet, wie der an $C$ angeschlossene Link $r_3$. Somit werden bei $R_3$ von beiden Links gleich viele Pakete ein- und ausgehen, weshalb $C$ dauerhaft $50\%$ der Datenrate auf $r_5$ nutzen kann. Der bei $R_1$ ankommende Datenverkehr von $A$ und $B$ sorgt allerdings für Unterschiede auf der Leitung $r_4$. So lange $B$ nichts sendet, nutzt $A$ die gesamte Leitung aus. Sobald $B$ sendet, erhält dieser Knoten anteilig die Datenrate, also prozentual zur Gesamtdatenrate.
+		
+		\begin{figure}[[htb]
+			\begin{tikzpicture}[]
+			\begin{axis}
+			[ width=1.0\textwidth,height=0.3\textwidth,
+			legend style={at={(0.1,1.4)}},
+			legend entries={$r_1=r_2$,$r_3$},
+			xmin=0,xmax=100,
+			ymin=0,ymax=50,
+			axis lines=left,
+			xlabel={Datenrate von $r_3$ (in Mbit/s)},
+			ylabel={bei S eingehende Daten (in \%)},
+			]
+			\addplot[color=red,only marks, mark size=1.0, error bars/.cd,
+			y dir=both,y explicit,error bar style={color=black}]
+			table [x index={0},y index={1}] {./img/same-r-up-r3-incom.csv};
+%			\addplot[color=blue,only marks, mark size=1.0, error bars/.cd,
+%			y dir=both,y explicit,error bar style={color=black}]
+%			table [x index={0},y index={2}] {./img/same-r-up-r3-incom.csv};
+			\addplot[color=green,only marks, mark size=1.0, error bars/.cd,
+			y dir=both,y explicit,error bar style={color=black}]
+			table [x index={0},y index={3}] {./img/same-r-up-r3-incom.csv};
+			\end{axis}
+			\end{tikzpicture}
+			\caption[Anteil an Fenstergröße zum Anteil der ankommenden Daten]{Anteil an Fenstergröße zum Anteil der ankommenden Daten}
+			\label{fig:r-r3-incom}
+		\end{figure}
+		
+		In der Abbildung~\ref{fig:r-r3-incom} wurde die Datenrate von $r_3$ verändert. Erkennbar ist, dass sich das Verhältnis der Pakete von $A$ und $B$ untereinander nicht verändert. Das liegt an dem Router $r_1$ der von beiden Paketen gleich viele an $R_2$ sendet. Erst dort entsteht ein Unterschied an den einkommenden Links, da $C$ über $r_3$ mit $R_2$ kommuniziert. Sobald die Datenrate von $r_5$ auf $r_3$ erreicht wurde, was bei $10$ Mbit/s der Fall ist, wird ein stabiler Zustand erreicht, in dem jeder bei $R_2$ ankommende Link $50\%$ des ausgehenden Datenverkehrs erzielt. Da $A$ und $B$ allerdings zusammen $50\%$ ausmachen, erhalten sie davon die Hälfte und somit $25\%$ des bei $S$ eingehenden Datenverkehrs. $C$ erhält dauerhaft $50\%$.
+		
+		An dieser Stelle kann die in Abschnitt~\ref{2-szen-analytisch} gemachte Annahme, dass die Router per FIFO die Warteschlangen abarbeiten in Frage gestellt werden. Da in Abbildung~\ref{fig:r-r3-incom} über $r_3$ weit mehr als das doppelte der Daten ankommen, müsste demnach bei $S$ schon bei $20$ Mbit/s $66\%$ der Daten ankommen. Das ist aber nicht der Fall. Es scheint eher so, als wenn sowohl $R_1$ als auch $R_2$ abwechselnd Daten aus den eingehenden Leitungen versenden. Somit erklärt sich das Phänom, dass bei ausgehenden Links immer gleich viele Daten von den eingehenden Links versendet werden, egal wie hoch die eingehende Datenrate ist.
+		
+	\subsection{2. Szenario}
+		Als erstes wurde der in Abschnitt~\ref{2-szen-analytisch} dargestellte stabile Zustand getestet. Erwartet wird hier, dass alle gesendeten Pakete von $A$ und $B$ ohne Verzögerung bei $S$ ankommen und dabei die Bandbreite und die Wartefenster $W_1$ und $W_2$ genau ausgenutzt werden. Hier wird, da diese Variante weit über den $80\%$ Auslastung liegt, eine sehr hohe RTT und im Verhältnis zum eigentlich stabilen Fall große Warteschlange erwartet.
+		\begin{itemize}
+			\item Fenstergröße $W_1$ für $A$ = $10$ KByte
+			\item Fenstergröße $W_2$ für $B$ = $10$ KByte
+			\item Datenrate $r$ = $10$ Mbit/s
+			\item Latenz pro Link: $T=4$ ms (für alle Links gleich)
+		\end{itemize}
+		Als erstes wird überprüft ob der Zustand stabil ist.
+		\begin{align*}
+		W_1+W_2 &\leq 4\cdot T\cdot r \\
+		10 \text{ KByte} +10 \text{ KByte} &\leq 4\cdot 0,004 \text{ s}\cdot 10 \text{ Mbit/s} \\
+		20 \text{ KByte} &\leq 160\cdot 10^{3} \text{ bit} \\
+		20 \text{ KByte} &\leq 20 \text{ KByte}
+		\end{align*}
+		
+		Mit der Simulation wird fast das gewünschte Ergebnis erzielt. Es wird eine Warteschlange von durchschnittlich $2,2$ KByte aufgebaut. Dabei beträgt die RTT für die Knoten $A$ und $B$ $17,74$ ms, wobei $4\cdot 4$ ms $=16$ ms als RTT ohne Warteschlange errechnet wurden. Mit den Wartezeiten in allen Knoten, die bei der analytischen Berechnung nicht einbezogen wurden, liegt der Wert nur knapp über dem erwarteten Ergebnis. Da auch die Warteschlange in der analytischen Betrachtung nicht einberechnet wurde, steigt die RTT nochmals ein wenig. Bei $S$ kommen in diesem Experiment $8,47$ Mbit/s an, wobei sich diese fair auf die beiden sendenden Knoten aufteilt.
+		
+		Im nächsten Schritt wird die Fenstergröße in beiden Knoten stark erhöht auf $W_1=W_2=218$ KByte. Die Warteschlange in $R$ beträgt nun $447$ KByte. Die RTT hat sich erhöht auf $373,6$ ms für beide Knoten. Es kommen $4,65$ Mbit/s pro Knoten bei $S$ an. Wie erwartet bleibt die Aufteilung der Ressourcen auf die beiden Knoten somit fair.
+		
+		Die Warteschlange müsste die folgende Länge erhalten.
+		\begin{align*}
+			RTT_{neu} &= RTT+ \frac{W_1+W_2}{r} \\
+			&= 17,74 \text{ms} + \frac{536 \text{KByte}}{10 \text{Mbit/s}} \\
+			&= 17,74 \text{ms} + \frac{4,28 \text{Mbit}}{10 \text{Mbit/s}} \\
+			&= 17,74 \text{ms} + 428 \text{ms}
+			&= 445,74 \text{ms}
+		\end{align*}
+		Das entspricht einer Abweichung von rund $16\%$ zum simulierten Wert.
+		
+		%TODO
+		Als nächstes werden die Fenstergrößen von $W_1$ und $W_2$ gleichmäßig verdoppelt, damit die versendeten Pakete abhängig von der RTT und der Warteschlange betrachtet werden können. Alle anderen Werte bleiben dafür gleich.
+		
+		\begin{figure}[htb]
+			\begin{subfigure}[a]{1.0\textwidth}
+				\begin{tikzpicture}[]
+				\begin{axis}
+				[ width=1.0\textwidth,height=0.3\textwidth,
+				xmin=0,xmax=5120000,
+				ymin=0,ymax=8500,
+%				xmode=log,
+				axis lines=left,
+				xlabel={Fenstergröße (in Byte)},
+				ylabel={RTT},
+				]
+				\addplot[color=red,only marks, mark size=1.0, error bars/.cd,
+				y dir=both,y explicit,error bar style={color=black}]
+				table [x index={0},y index={1}] {./img/same-a-b-up-winsize-rtt.csv};
+				\end{axis}
+				\end{tikzpicture}
+				\caption[Fenstergröße zu RTT]{Fenstergröße zu RTT}
+				\label{fig:winsize-rtt}
+			\end{subfigure}\\[2ex]
+			~
+			\begin{subfigure}[b]{1.0\textwidth}
+				%			\begin{center}
+				\begin{tikzpicture}[]
+				\begin{axis}
+				[ width=1.0\textwidth,height=0.3\textwidth,
+				xmin=0,xmax=5120000,
+				%ymin=0,ymax=88000000,
+				ymin=0,ymax=11000,
+%				xmode=log,
+				axis lines=left,
+				xlabel={Fenstergröße (in Byte)},
+				ylabel={Warteschlange in KByte},
+				]
+				\addplot[color=red,only marks, mark size=1.0, error bars/.cd,
+				y dir=both,y explicit,error bar style={color=black}]
+				table [x index={0},y index={1}] {./img/same-a-b-up-winsize-queue2.csv};
+				\end{axis}
+				\end{tikzpicture}
+				\caption[Fenstergröße zu Warteschlange]{Fenstergröße zu Warteschlange}
+				\label{fig:winsize-queue}
+				%			\end{center}
+			\end{subfigure}
+			\caption[Fenstergröße im Verhältnis]{Fenstergröße im Verhältnis}
+			\label{fig:winsize}
+		\end{figure}
+		
+		In den Abbildungen ist erkennbar, dass bei sehr großen Fenstergrößen sowohl die RTT, als auch die Warteschlange extrem ansteigen. Außerdem ist erkennbar, dass beide im direkten Verhältnis zueinander stehen. Die RTT hängt somit direkt mit der Länge der Warteschlange zusammen.
+		
+		Nun wird direkt die Fairness zwischen den sendenden Knoten betrachten. Dabei ist das Verhältnis der Datenmengen von $A$ und $B$, die bei $S$ ankommen im Bezug auf die Fenstergröße ausschlaggebend. Wie in Abschnitt~\ref{2-szen-analytisch} beschrieben wird erwartet, dass die Daten im gleichen Verhältnis bei S ankommen, wie sie abgeschickt werden. Das bedeutet, wenn das Wartefenster von $A$ nicht verändert wird, und das Wartefenster von $B$ immer weiter steigt, werden die von $A$ bei $S$ ankommenden Daten ab dem Zeitpunkt, an dem $r$ ausgelastet wird, immer weiter sinken.
+		
+		\begin{figure}[[h!]
+			\begin{tikzpicture}[]
+			\begin{axis}
+			[ width=1.0\textwidth,height=0.3\textwidth,
+			xmin=0,xmax=100,
+			ymin=0,ymax=100,
+			axis lines=left,
+			xlabel={Fenstergröße von B (in \%)},
+			ylabel={empfangene Daten von B (in \%)},
+			]
+			\addplot[color=red,only marks, mark size=1.0, error bars/.cd,
+			y dir=both,y explicit,error bar style={color=black}]
+			table [x index={0},y index={1}] {./img/same-a-up-b-winsize.csv};
+			\end{axis}
+			\end{tikzpicture}
+			\caption[Anteil an Fenstergröße zum Anteil der ankommenden Daten]{Anteil an Fenstergröße zum Anteil der ankommenden Daten}
+			\label{fig:winsize-a-b-different}
+		\end{figure}
+		
+		In der Abbildung~\ref{fig:winsize-a-b-different} sieht man jeweils den Anteil des Knoten $B$ an der Gesamtmenge der Fenstergröße, bzw. empfangenen Daten in $S$. Es ist erkennbar, dass diese beiden Werte genau zusammenhängen. Bei einer begrenzten Datenrate $r$, wie sie in der Simulation vorkommt folgt daraus, dass der Knoten $A$ immer weniger Daten an $S$ versenden kann. Um nun die gewünschte Datenmenge weiterhin an $S$ senden zu können, müsste $A$ ebenfalls die Fenstergröße erhöhen.
+		
+
+\section{Diskussion der Ergebnisse}
+	Welche Daten bei $S_{in}$ fehlerhaft ankommen, hängt von den Links ab, über die zu viele Daten gesendet werden. Außerdem ist die Topologie ausschlaggebend. Wann und ob Daten dabei verloren gehen hängt ebenfalls von der Größe der Warteschlangen in den Routern und von den Empfangsraten über die eingehenden Links ab. Es ist durch die Untersuchung auch zu erkennen, dass die Fairness nicht gwahrt wird. Sobald ein Knoten $A$ zu viele Daten sendet, werden Daten von allen Knoten, die vor dem ersten Router an dem $A$ angeschlossen ist verloren gehen. Wenn wie in Abbildung~\ref{fig:doppel-y-topologie} gezeigt alle Knoten über den selben Router $R_2$ kommunizieren und ein Knoten direkt an $R_2$ angeschlossen ist, wird eine Warteschlange alle Knoten betreffen. Das gilt aber nur für eingehende Verbindungen. Wenn sich am Router $R_1$ Warteschlangen bilden, wird $R_2$ das nicht mitbekommen und alle Pakete von $C$ erfolgreich übertragen. Außerdem ist die Fairness von der Topologie selber abhängig, da Router mit gleichen eingehenden Link-Datenraten für sich fair diese Daten weitersenden, unabhängig davon wieviele Knoten hinter welchen eingehenden Links existieren.
+	
+	Im zweiten Szenario ist die Fairness ebenfalls nicht gegeben. Sobald insgesamt mehr Daten versendet werden, als über $r$ versendet werden können, wird die RTT bei beiden Knoten höher, egal wieviel Anteil die Knoten an der versendeten Datenmenge haben.
+
+
+	
+
+\end{document}
