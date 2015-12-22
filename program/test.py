@@ -4,8 +4,12 @@ import random
 
 
 def test():
-  tt = format(random.getrandbits(20), '20b')
-  print (tt)
+  id1 = random.getrandbits(4)
+  id2 = random.getrandbits(4)
+  print (id1)
+  print (id2)
+  id3 = (id1 ^ id2)
+  print (id3)
 
 
 test();
