@@ -31,7 +31,8 @@ def server(todo):
 # Client definieren
 def client(todo):
   if todo is 'connect':
-    message = '11001001100010011011' # simbolisiert die ID
+    #message = '11001001100010011011' # simbolisiert die ID
+    message = 'close'
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
     client_socket.connect(server_address) # Verbindung zum Server aufbauen
