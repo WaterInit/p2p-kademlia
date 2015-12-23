@@ -11,8 +11,12 @@ def test():
   id3 = (id1 ^ id2)
   print (str(id3)," ",len(bin(id3))-2," ",str(bin(id3)))
 
+def test2():
+  bucket = [[(0,0,0) for x in range(4)] for x in range(4)]
+  print (bucket[0][0][0])
 
-test();
+
+test2();
 #test("open");
 #connect();
 #socket("open");
