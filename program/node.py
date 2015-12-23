@@ -7,12 +7,12 @@ class node(object):
     bucket = [[(0,0,0) for x in range(20)] for x in range(20)]	# 20 buckets to store respectively 20 nodes
 								# bucket[bucket-nr][(id,ip,port)]
   ):
-    self.id = ide
+    self.id = id
     self.bucket = bucket
 
-  # ID hinzufuegen (add), finden
-  def bucket(todo,s_id):
-    if todo is 'add':
-      distance = (self.id ^ s_id)
+  # ID hinzufuegen (neue ID, neue IP, neuer Port)
+  def bucket_add(n_id,n_ip,n_port):
+     # (((x-or um Entfernung zu kennen) in binaer umwandeln) umso laenger die binaerzahl, umso weiter entfernt)
+    distance = len(bin((self.id ^ n_id)))
       
       
