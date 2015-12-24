@@ -8,17 +8,16 @@ server_address = (socket.gethostname(), 1246)
 
 # Client definieren
 def client(todo):
-  if todo is 'connect':
-    #message = '11001001100010011011' # simbolisiert die ID
-    message = format(random.getrandbits(20))
-  elif todo is 'quit':
-    message = 'close'
-  else:
-    print ("Fehler")
-    return 0
+  bucket_size = 4
 
-  version = ("0001")
-  todo = ("0000")
+  version = "0001"
+  todo = "0001"
+
+  #message = '11001001100010011011' # simbolisiert die ID
+  message = format(random.getrandbits(bucket_size))
+  if todo is 'quit':
+    version = "0000"
+
 
   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
   client_socket.connect(server_address) # Verbindung zum Server aufbauen
@@ -27,7 +26,7 @@ def client(todo):
   client_socket.sendall(todo.encode()) # todo 0001=testen
   client_socket.sendall(message.encode()) # ID senden und encoden (in bytes casten)
 
-  if int(todo) is 0:
+  if int(todo) is 1:
     data = pickle.loads(client_socket.recv(1024))
     print (data)
 

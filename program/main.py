@@ -38,24 +38,27 @@ def main():
     #print ("got it") # testen (Verbindung aufgebaut)
 
     version = connection.recv(4).decode() # version of client
+    if int(version) is 0: # stop Server for test cases
+      break
+
     todo = connection.recv(4).decode() # what the Client want to do
     print ("version: ",str(version)," todo: ",str(todo))
 
-    ''' Client wants to search for ID '''
-    if int(todo) is 1:
+    ''' test case '''
+    if int(todo) is 0:
+      print ("test")
       data = connection.recv(20).decode() # erhalte 20 Bytes (20-stellige ID) und decode diese
-      if 'close' in str(data):
-        break
       print ("erhaltene Daten: ",(data)) # test (erhaltene ID ausgeben)
       knoten.bucket_add(int(data),"192.168.1.1","1234") # ID hinzufuegen
       print (knoten.bucket) # print complete bucket
-    elif int(todo) is 0: # test cases
+    ### Client wants to search for ID ###
+    elif int(todo) is 1: # test cases
+      print (knoten.bucket)
       data = connection.recv(20).decode() # erhalte 20 Bytes (20-stellige ID) und decode diese
-      if 'close' in str(data):
-        break
       print ("zu suchende ID: ",(data)) # test (erhaltene ID ausgeben)
       returns = knoten.find_id(int(data))
       connection.sendall(pickle.dumps(returns)) # serialize to send
+      knoten.bucket_add(int(data),"192.168.1.1","1234") # ID hinzufuegen
       print (returns)
     else:
       print ("error beim finden in main")
