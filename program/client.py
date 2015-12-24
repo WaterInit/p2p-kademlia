@@ -14,7 +14,9 @@ def client(todo):
   todo = "0001"
 
   #message = '11001001100010011011' # simbolisiert die ID
-  message = format(random.getrandbits(bucket_size))
+  myid = format(random.getrandbits(bucket_size))
+  #myid = sys.argv[1]
+  s_key = format(random.getrandbits(bucket_size))
   if todo is 'quit':
     version = "0000"
 
@@ -23,12 +25,23 @@ def client(todo):
   client_socket.connect(server_address) # Verbindung zum Server aufbauen
 
   client_socket.sendall(version.encode()) # version 0001 und 0000=keyuebergeben (testen)
+  if int(client_socket.recv(4).decode()) is not 0: # Antwort senden um bit-stroeme zu unterscheiden
+    print("Fehler")
+    return 0
   client_socket.sendall(todo.encode()) # todo 0001=testen
-  client_socket.sendall(message.encode()) # ID senden und encoden (in bytes casten)
+  if int(client_socket.recv(4).decode()) is not 0: # Antwort senden um bit-stroeme zu unterscheiden
+    print("Fehler")
+    return 0
+  client_socket.sendall(myid.encode()) # ID senden und encoden (in bytes casten)
+  if int(client_socket.recv(4).decode()) is not 0: # Antwort senden um bit-stroeme zu unterscheiden
+    print("Fehler")
+    return 0
+  client_socket.sendall(s_key.encode())
+  print ("ID: ",str(myid)," key: ",str(s_key))
 
-  if int(todo) is 1:
-    data = pickle.loads(client_socket.recv(1024))
-    print (data)
+  #if int(todo) is 1:
+    #data = pickle.loads(client_socket.recv(1024))
+    #print (data)
 
 
   print ("Client is done") # test (fertig)
