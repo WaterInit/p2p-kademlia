@@ -24,6 +24,8 @@ def server(*todo): # first arg = what to do, second arg = optional socket-object
 
 # finde eine ID im Netzwerk
 #def find_id(s_id):
+
+
   
 
 
@@ -47,12 +49,10 @@ def main():
     print ("version: ",str(version)," todo: ",str(todo))
     c_id = int(connection.recv(4).decode()) # Client id
     connection.sendall(("0").encode()) # Antwort senden um bit-stroeme zu unterscheiden
-    print("client ID: ",str(c_id))
-    knoten.bucket_add(c_id,"192.168.1.1","1234") # ID hinzufuegen
+    knoten.bucket_add(c_id,client_address[0],client_address[1]) # ID hinzufuegen
 
     ### test case ###
     if int(todo) is 0:
-      print ("test")
       s_key = int(connection.recv(4).decode()) # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
       print ("erhaltene Daten: ",(s_key)) # test (erhaltene ID ausgeben)
       print (knoten.bucket) # print complete bucket

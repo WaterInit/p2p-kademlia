@@ -22,13 +22,11 @@ class node(object):
     # (((x-or um Entfernung zu kennen) in binaer umwandeln) umso laenger die binaerzahl, umso weiter entfernt)
     # (laenge - 1) da Bucket-index mit 0 beginnt
     distance = len(bin(self.myid ^ n_id))-3
-    #print ("distance: ",str(distance))
-    #print (self.myid ^ n_id)
     for i in range(bucket_size):
-      #print(self.myid,n_id,distance,i)
       if self.bucket[distance][i][1] is 0: # empty slot, id can be 0 - ip cant be 0
         self.bucket[distance][i] = (n_id,n_ip,n_port)
-        #print ("einfuegen")
+        break
+      elif self.bucket[distance][i][0] is n_id: # ID already exists
         break
       elif i is (bucket_size-1): # TODO ueberlauflisten hinzufuegen
         break
@@ -36,14 +34,37 @@ class node(object):
         continue
       
   def find_id(self, key):
+    distance = len(bin(self.myid ^ key))-3
+    bucket_return = self.bucket[distance]
+    return bucket_return
+
+    if (bucket_return[bucket_size-1][1] is not 0): # Bucket is full
+      return bucket_return
+
+    # Bucket is not full
+    empty = 0
+    while (bucket_return[empty][1] is not 0):
+      empty += 1
+    while (empty < bucket_size):
+
+    
+
+
+
+
+
+
+
+  def find_id_old(self, key):
     # search for key in known keys
+    mybucket = self.bucket
     for i in range(len(self.keys)):
       if key is keys[i]:
         return keys[i]
 
     # key not known -> search in buckets
     distance = len(bin(self.myid ^ key))-3
-    returns = self.bucket[distance]
+    returns = mybucket[distance]
     if key is self.myid:
       return returns
     if returns[(bucket_size-1)][1] is 0: # array ist nicht voll -> auffuellen
@@ -55,16 +76,16 @@ class node(object):
         #print("i: ",str(i)," distance: ",str(distance))
         for j in range(bucket_size):
           print ("blub: ",str(j),str(k))
-          if self.bucket[i][j][1] is 0:
+          if mybucket[i][j][1] is 0:
             break
           else:
-            '''
-            print (self.bucket[i][j])
-            returns[k] = self.bucket[i][j]
+            #'''
+            print (mybucket[i][j])
+            returns[k] = mybucket[i][j]
             k += 1
             if k > (bucket_size-1): # if returns full
               return returns
-            '''
+            #'''
         i -= 1
         if i < 0:
           i = (bucket_size-1)
