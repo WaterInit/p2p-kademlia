@@ -17,7 +17,7 @@ def client(todo):
   myid = format(random.getrandbits(bucket_size))
   #myid = sys.argv[1]
   s_key = format(random.getrandbits(bucket_size))
-  if todo is 'quit':
+  if 'quit' in sys.argv[1]:
     version = "0000"
 
 
@@ -39,9 +39,9 @@ def client(todo):
   client_socket.sendall(s_key.encode())
   print ("ID: ",str(myid)," key: ",str(s_key))
 
-  #if int(todo) is 1:
-    #data = pickle.loads(client_socket.recv(1024))
-    #print (data)
+  if int(todo) is 1:
+    data = pickle.loads(client_socket.recv(1024))
+    print (data)
 
 
   print ("Client is done") # test (fertig)

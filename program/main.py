@@ -8,7 +8,7 @@ server_address = (socket.gethostname(), 1246) # use specified Port to test
 # Server definieren, socket oeffnen
 def server(*todo): # first arg = what to do, second arg = optional socket-object
   if todo[0] is 'open':
-    print ("laeuft") # testen (server gestartet)
+    #print ("laeuft") # testen (server gestartet)
     listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
     listen_socket.bind(server_address) # socket an IP und Port binden
     listen_socket.listen(5) # socket als listen definieren
@@ -31,7 +31,7 @@ def server(*todo): # first arg = what to do, second arg = optional socket-object
 
 def main():
   knoten = node() # initialize node
-  print (knoten.myid) # testen
+  print ("node ID: ",str(knoten.myid)) # testen
   #print (knoten.bucket[0]) # testen
 
   listen_socket = server("open");
@@ -64,8 +64,10 @@ def main():
       returns = knoten.find_id(s_key)
       connection.sendall(pickle.dumps(returns)) # serialize to send
       print (knoten.bucket)
-      print (returns)
-    else:
+      #print (returns)
+
+    ### get unknown ID
+    else: # TODO maybe do something
       print ("error beim finden in main")
     
   server("close",listen_socket);
