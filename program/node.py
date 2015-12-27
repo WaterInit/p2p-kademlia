@@ -16,6 +16,7 @@ class node(object):
     self.bucket = bucket
     self.keys = keys
 
+
   ### add ID to Bucket (new ID, new IP, new Port)
   def bucket_add(self, n_id, n_ip, n_port):
     # (((x-or um Entfernung zu kennen) in binaer umwandeln) umso laenger die binaerzahl, umso weiter entfernt)
@@ -30,6 +31,8 @@ class node(object):
       return 0
     else: # TODO ueberlaufliste hinzufuegen
       return 0
+
+
 
   ### find key and return bucket with near IDs to the key ###
   def find_id(self, key):

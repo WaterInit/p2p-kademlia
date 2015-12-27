@@ -2,8 +2,9 @@ import socket, pickle
 import sys
 from node import node
 
-server_address = (socket.gethostname(), 1246) # use specified Port to test
-#server_address = (socket.gethostname(), 0) # use random Port
+### all Hosts ###
+server_address = (socket.gethostname(), 0) # all other Hosts
+my_version = "0001" # first Version
 
 # Server definieren, socket oeffnen
 def server(*todo): # first arg = what to do, second arg = optional socket-object
@@ -12,7 +13,7 @@ def server(*todo): # first arg = what to do, second arg = optional socket-object
     listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
     listen_socket.bind(server_address) # socket an IP und Port binden
     listen_socket.listen(5) # socket als listen definieren
-    print (listen_socket.getsockname())
+    #print (listen_socket.getsockname())
     return listen_socket
 
   elif todo[0] is 'close':
@@ -26,15 +27,35 @@ def server(*todo): # first arg = what to do, second arg = optional socket-object
 #def find_id(s_id):
 
 
-  
+def init_node(knoten): # initialize node in network
+  #known_host = (127.0.0.1)
+  #bucket_add(
+  find_id(knoten.myid); # give back a bucket
 
 
 def main():
-  knoten = node() # initialize node
-  print ("node ID: ",str(knoten.myid)) # testen
-  #print (knoten.bucket[0]) # testen
-
+  ### initialize Host ###
+  #some other Host given
+  if len(sys.argv) > 1:
+    #print (sys.argv[1],sys.argv[2],sys.argv[3])
+    while True:
+      knoten = node() # initialize node
+      knoten.bucket_add(int(sys.argv[1]),sys.argv[2],int(sys.argv[3])) # add known host to bucket
+      if init_node(knoten) is 0: # initialize to existing Network
+        break
+  else: # thats the first node
+    knoten = node()
+  #print (knoten.bucket) # testen
   listen_socket = server("open");
+  print(knoten.myid,listen_socket.getsockname()[0],listen_socket.getsockname()[1])
+
+
+  server("close",listen_socket);
+  return 0
+  
+  ### initialize end ###
+
+
   while True:
     connection, client_address = listen_socket.accept() # auf Verbindung warten
     #print ("got it") # testen (Verbindung aufgebaut)
@@ -45,7 +66,7 @@ def main():
       break
 
     todo = connection.recv(4).decode() # what the Client want to do
-    connection.sendall(("0").encode()) # Antwort senden um bit-stroeme zu unterscheiden
+    connection.sendall(("0").encode()) # Antwort senden um bit-stream zu unterscheiden
     print ("version: ",str(version)," todo: ",str(todo))
     c_id = int(connection.recv(4).decode()) # Client id
     connection.sendall(("0").encode()) # Antwort senden um bit-stroeme zu unterscheiden
