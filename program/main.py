@@ -4,7 +4,7 @@ from node import node
 
 ### all Hosts ###
 server_address = (socket.gethostname(), 0) # all other Hosts
-my_version = "0001" # first Version
+bucket_size = 4 # size of bucket
 
 # Server definieren, socket oeffnen
 def server(*todo): # first arg = what to do, second arg = optional socket-object
@@ -24,13 +24,18 @@ def server(*todo): # first arg = what to do, second arg = optional socket-object
     print ("nichts")
 
 # finde eine ID im Netzwerk
-#def find_id(s_id):
+#def find_key(s_key):
 
 
 def init_node(knoten): # initialize node in network
-  #known_host = (127.0.0.1)
-  #bucket_add(
-  find_id(knoten.myid); # give back a bucket
+  knoten.bucket_add(int(sys.argv[1]),sys.argv[2],int(sys.argv[3]))
+  knoten.find_key(knoten.myid)
+  
+  #for i in range(len(bucket)):
+  #  threads.append(Thread(target=sleep,args=()))
+  
+  return True # return true
+    
 
 
 def main():
@@ -41,7 +46,7 @@ def main():
     while True:
       knoten = node() # initialize node
       knoten.bucket_add(int(sys.argv[1]),sys.argv[2],int(sys.argv[3])) # add known host to bucket
-      if init_node(knoten) is 0: # initialize to existing Network
+      if init_node(knoten): # initialize to existing Network
         break
   else: # thats the first node
     knoten = node()
@@ -50,8 +55,8 @@ def main():
   print(knoten.myid,listen_socket.getsockname()[0],listen_socket.getsockname()[1])
 
 
-  server("close",listen_socket);
-  return 0
+  #server("close",listen_socket);
+  #return 0
   
   ### initialize end ###
 
@@ -59,7 +64,6 @@ def main():
   while True:
     connection, client_address = listen_socket.accept() # auf Verbindung warten
     #print ("got it") # testen (Verbindung aufgebaut)
-
     version = connection.recv(4).decode() # version of client
     connection.sendall(("0").encode()) # Antwort senden um bit-stroeme zu unterscheiden
     if int(version) is 0: # stop Server for test cases
@@ -67,8 +71,9 @@ def main():
 
     todo = connection.recv(4).decode() # what the Client want to do
     connection.sendall(("0").encode()) # Antwort senden um bit-stream zu unterscheiden
-    print ("version: ",str(version)," todo: ",str(todo))
+    #print ("version: ",str(version)," todo: ",str(todo))
     c_id = int(connection.recv(4).decode()) # Client id
+    print ("kam was")
     connection.sendall(("0").encode()) # Antwort senden um bit-stroeme zu unterscheiden
     knoten.bucket_add(c_id,client_address[0],client_address[1]) # ID hinzufuegen
 
@@ -81,10 +86,10 @@ def main():
     ### Client wants to search for ID ###
     elif int(todo) is 1: # test cases
       s_key = int(connection.recv(4).decode()) # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
-      print ("zu suchende ID: ",(s_key)) # test (erhaltene ID ausgeben)
+      #print ("zu suchende ID: ",(s_key)) # test (erhaltene ID ausgeben)
       returns = knoten.find_id(s_key)
       connection.sendall(pickle.dumps(returns)) # serialize to send
-      print (knoten.bucket)
+      #print (knoten.bucket)
       #print (returns)
 
     ### get unknown ID

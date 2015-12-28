@@ -3,6 +3,7 @@ import socket
 import random
 import time # Threading test
 from threading import Thread
+import threading
 
 
 def test(): # get random Bits
@@ -24,26 +25,65 @@ def test2(): # lists in arrays
   print (bucket)
 
 
-def sleep():
-  time.sleep(5)
+def sleep(*i):
+  print (i[2])
+  time.sleep(int(1))
   print("fertig")
 
 def test3(): # Threading
-  threads = []
   for i in range(2):
-    threads.append(Thread(target=sleep,args=()))
-  for j in range(2):
-    threads[j].start()
-#  t2 = Thread(target=sleep,args=())
-#  t2.start()
-  print ("something")
+    (Thread(target=sleep,args=((1,2,3)))).start()
+  print (i)
+
+#mylock = threading.Lock()
+
+def sleep2():
+  mylock.acquire()
+  print ("start")
+  time.sleep(5)
+  print ("fertig")
+  mylock.release()
+def test4(): # locking
+  t = Thread(target=sleep2,args=())
+  t.start()
+  time.sleep(1)
+  mylock.acquire()
+  print ("fertig2")
 
 
+def test5_1(i):
+  i.append(1)
+def test5(): # call by reference
+  i = []
+  test5_1(i);
+  test5_1(i);
+  test5_1(i);
+  test5_1(i);
+  time.sleep(1)
+  i.append(2)
+  print (i)
 
 
+def test6(): # ip,port,...
+  print (socket.gethostname())
+  #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
+  #client_socket.connect(server_address) # Verbindung zum Server aufbauen
+
+def test7(): # tuple
+  l = (6,7,8,9)
+  print (l)
+  
+  l = (1,)+l[1:]
+
+  print (l)
+  
 
 
-test3();
+test7();
+#test6();
+#test5();
+#test4();
+#test3();
 #test2();
 #test("open");
 #connect();
