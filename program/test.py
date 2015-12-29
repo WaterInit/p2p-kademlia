@@ -76,10 +76,36 @@ def test7(): # tuple
   l = (1,)+l[1:]
 
   print (l)
-  
+
+tt = []
+
+def sleep3():
+  global tt
+  tt.append(1)
+  print("Thread fertig")
+
+def test8(): # Threading check if running
+  global tt
+  t = Thread(target=sleep3,args=())
+  t.start()
+  while True:
+    if not t.isAlive():
+      break
+  print (tt)
+  print ("done")
+
+  tt = []
+  t = Thread(target=sleep3,args=())
+  t.start()
+  while True:
+    if not t.isAlive():
+      break
+  print (tt)
+  print ("done")
 
 
-test7();
+test8();
+#test7();
 #test6();
 #test5();
 #test4();
