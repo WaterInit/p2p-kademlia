@@ -20,7 +20,7 @@ class node(object):
 						# hoher Wert im Bucket = weit entfernt
     keys = [],					# known keys
     bucket_lock = threading.Lock(),		# lock bucket
-    serveraddress = ('0',0)			# (server_ip, server_port)
+    serveraddress = ('0',0),			# (server_ip, server_port)
   ):
     self.myversion = myversion
     self.myid = myid
@@ -28,6 +28,7 @@ class node(object):
     self.keys = keys
     self.bucket_lock = bucket_lock
     self.serveraddress = serveraddress
+    self.listen_socket = self.server("open")		# listen socket
 
 
   ### add ID to Bucket (new ID, new IP, new Port)
@@ -196,6 +197,25 @@ class node(object):
       self.bucket_lock.release() # threadsafe until here
     # ready
       
+
+  # Server definieren, socket oeffnen
+  def server(self,*todo): # first arg = what to do, second arg = optional socket-object
+    server_address = (socket.gethostname(), 0)
+    if todo[0] is 'open':
+      #print ("laeuft") # testen (server gestartet)
+      listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
+      listen_socket.bind(server_address) # socket an IP und Port binden
+      listen_socket.listen(5) # socket als listen definieren
+      #print (listen_socket.getsockname())
+      self.serveraddress = listen_socket.getsockname()
+      return listen_socket
+
+    elif todo[0] is 'close':
+      todo[1].close()
+      print ("socket schliessen")
+
+    else:
+      print ("nichts")
 
 
 

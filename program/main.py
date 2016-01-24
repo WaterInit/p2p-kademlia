@@ -3,37 +3,15 @@ import sys
 from node import node
 
 ### all Hosts ###
-server_address = (socket.gethostname(), 0) # all other Hosts
+#server_address = (socket.gethostname(), 0) # all other Hosts
 bucket_size = 4 # size of bucket
-
-# Server definieren, socket oeffnen
-def server(*todo): # first arg = what to do, second arg = optional socket-object
-  if todo[0] is 'open':
-    #print ("laeuft") # testen (server gestartet)
-    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
-    listen_socket.bind(server_address) # socket an IP und Port binden
-    listen_socket.listen(5) # socket als listen definieren
-    #print (listen_socket.getsockname())
-    return listen_socket
-
-  elif todo[0] is 'close':
-    todo[1].close()
-    print ("socket schliessen")
-
-  else:
-    print ("nichts")
-
-# finde eine ID im Netzwerk
-#def find_key(s_key):
     
 
 
 def main():
   ### initialize Host ###
   knoten = node() # initialize node
-  listen_socket = server("open");
-  knoten.serveraddress = listen_socket.getsockname()
-  print(knoten.myid,listen_socket.getsockname()[0],listen_socket.getsockname()[1]) # testen
+  print(knoten.myid,knoten.listen_socket.getsockname()[0],knoten.listen_socket.getsockname()[1]) # testen
   #some other Host given # initialize to existing Network
   if len(sys.argv) > 1:
     knoten.bucket_add(int(sys.argv[1]),sys.argv[2],int(sys.argv[3]))
@@ -48,7 +26,7 @@ def main():
 
   while True:
     print ("start")
-    connection, client_address = listen_socket.accept() # wait for Connection
+    connection, client_address = knoten.listen_socket.accept() # wait for Connection
     #print ("got it") # testen (Verbindung aufgebaut)
 
     ### get version and todo ###
@@ -83,6 +61,6 @@ def main():
     else: # TODO maybe do something
       print ("error beim finden in main")
     
-  server("close",listen_socket);
+  server("close",knoten.listen_socket);
 
 main();
