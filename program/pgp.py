@@ -10,7 +10,7 @@ class PGPEntry(object):
         self.sig = []
 
     def __str__(self):
-        return self.email
+        return self.email + "\nPubKey: " + str(self.pub) + "\nSignatures: " + str(self.sig)
 
     # sign key instance by <signer_email> with secret key <signer_sec>
     def sign(self, signer_email, signer_sec):
@@ -26,7 +26,7 @@ class PGPKey(object):
         (pubkey, privkey) = rsa.newkeys(512)
 
         self.sec = str(privkey)
-        self.pgp_entry = PGPEntry(self.email, str(pubkey), datetime.date.today())
+        self.pgp_entry = PGPEntry(self.email, pubkey, datetime.date.today())
 
 
 class Signature(object):
