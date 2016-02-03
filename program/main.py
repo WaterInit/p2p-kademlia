@@ -1,4 +1,3 @@
-import socket, pickle
 import sys
 from node import node
     
@@ -16,7 +15,9 @@ def main():
   ### initialize end ###
 
   while True:
-    input("")
-  server("close",knoten.listen_socket);
+    user_todo = input("")
+    ret = knoten.action(user_todo)
+    if ret == 1: # beenden
+      break
 
 main();

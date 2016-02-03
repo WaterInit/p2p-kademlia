@@ -29,8 +29,9 @@ class node(object):
     self.bucket_lock = bucket_lock
     self.serveraddress = serveraddress
     self.listen_socket = self.server("open")		# listen socket
-    thread_main = Thread(target=self.control,args=())
-    thread_main.start()
+    self.thread_main = Thread(target=self.control,args=())
+    self.thread_main.start()
+    self.stoprequest = threading.Event()
 
 
   ### infinity wait for connections
@@ -40,6 +41,7 @@ class node(object):
       print ("start")
       # wait for Connection
       connection, client_address = self.listen_socket.accept()
+      print ("sssss")
 
       ### get version and todo ###
       infos = pickle.loads(connection.recv(1024))
@@ -267,9 +269,17 @@ class node(object):
     elif todo[0] is 'close':
       todo[1].close()
       print ("socket schliessen")
-
     else:
       print ("nichts")
+
+  # some actions (like "stop server")
+  def action(self, aktion):
+    if aktion == 'stop': # stop server
+      # stop listen thread
+      #self.thread_main.cancel()
+      # stop listen socket
+      self.server("close",self.listen_socket);
+      return 1
 
 
 
