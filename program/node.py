@@ -29,7 +29,44 @@ class node(object):
     self.bucket_lock = bucket_lock
     self.serveraddress = serveraddress
     self.listen_socket = self.server("open")		# listen socket
+    thread_main = Thread(target=self.control,args=())
+    thread_main.start()
 
+
+  ### infinity wait for connections
+  def control(self):
+    while True:
+      # print that the host is ready and wait for connection
+      print ("start")
+      # wait for Connection
+      connection, client_address = self.listen_socket.accept()
+
+      ### get version and todo ###
+      infos = pickle.loads(connection.recv(1024))
+      version = infos[0]
+      todo = infos[1]
+      connection.sendall(("0").encode()) # answer to distinguish bit-streams
+      ### get contact-information ###
+      c_infos = pickle.loads(connection.recv(1024)) # Client (id,ip,port)
+      connection.sendall(("0").encode()) # answer to distinguish bit-streams
+      self.bucket_add(c_infos[0],c_infos[1],c_infos[2]) # ID hinzufuegen
+
+      ### test case ###
+      if int(todo) is 0:
+        s_key = int(connection.recv(4).decode()) # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
+        print ("erhaltene Daten: ",(s_key)) # test (erhaltene ID ausgeben)
+        print (self.bucket) # print complete bucket
+      ### Client is searching key. return key or clother hosts ###
+      elif int(todo) is 1: # test cases
+        s_key = int(connection.recv(4).decode()) # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
+        returns = self.find_id(s_key)
+        connection.sendall(pickle.dumps(returns)) # serialize to send
+      ### Client want a is-life message
+      elif int(todo) is 2: # 
+        connection.sendall(("1").encod()) # 1 = this host is alive
+      ### get unknown ID
+      else: # TODO maybe do something
+        print ("error beim finden in main")
 
   ### add ID to Bucket (new ID, new IP, new Port)
   def bucket_add(self, n_id, n_ip, n_port):
@@ -46,6 +83,17 @@ class node(object):
       print (self.bucket)
       return 0
     else: # TODO ueberlaufliste hinzufuegen
+      host = self.bucket[distance][0]
+      client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket initialisieren
+      client_socket.connect((host[1],host[2])) # Verbindung zum Server aufbauen (ip,port)
+      ### send Version and todo
+      client_socket.sendall(pickle.dumps([self.myversion,"2"]))
+      if int(client_socket.recv(4).decode()) is 1: # Server is alive
+        (self.bucket[distance]).append(self.bucket[distance].pop(0))
+      else: # Server is down
+        self.bucket[distance].pop(0)
+        (self.bucket[distance]).append((n_id,n_ip,n_port))
+
       return 0
 
 
@@ -57,24 +105,30 @@ class node(object):
     for i in range(len(self.keys)):
       if key is keys[i]:
         return keys[i]
-    # key not known -> search in buckets
+    # key unknown -> search in buckets
     distance = len(bin(self.myid ^ key))-3
     returns = self.bucket[distance][:]
     if key is self.myid: # TODO find existing node at initialize, lt. Scheuermann=Absturz ist hier egal
       return 1 # return error
     if len(returns) < bucket_size: # array ist nicht voll -> auffuellen
+      backward = 0
       i = distance - 1
       if i < 0:
-        i = (bucket_size-1)
-      while i is not distance:
+        backward = 1
+        i = distance + 1
+      while i < bucket_size:
         #print("i: ",str(i)," distance: ",str(distance))
         for j in range(len(self.bucket[i])):
           returns.append(self.bucket[i][j])
           if len(returns) is bucket_size:
             return returns # Bucket is now full
-        i -= 1
+        if backward is 0: # go forward
+          i -= 1
+        else: # go backward
+          i += 1
         if i < 0:
-          i = (bucket_size-1)
+          i = distance + 1
+          backward = 1
     return returns # Bucket is already full
 
 
