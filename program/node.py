@@ -12,7 +12,7 @@ s_bucket = []
 class node(object):
   def __init__(
     self,					#
-    myversion = "0001",				# version of this product
+    myversion = "1",				# version of this product
     myid = random.getrandbits(bucket_size),	# id of node (1 .. 1.048.575) as (20-) bitstring
     bucket = [[] for x in range(bucket_size)],	# 20 buckets to store respectively 20 nodes
 						# bucket[bucket-nr][list of (id,ip,port)]
