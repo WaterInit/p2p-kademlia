@@ -13,6 +13,9 @@ s_bucket = []
 class node(object):
 	def __init__(
 					self,  #
+					first_id,
+					first_ip,
+					first_port,
 					myversion="1",  # version of this product
 					myid=random.getrandbits(bucket_size),  # id of node (1 .. 1.048.575) as (20-) bitstring
 					bucket=[[] for x in range(bucket_size)],  # 20 buckets to store respectively 20 nodes
@@ -33,6 +36,9 @@ class node(object):
 		self.thread_main = Thread(target=self.control, args=())
 		self.thread_main.start()
 		self.stoprequest = threading.Event()
+		if not (first_ip is 0 and first_port is 0):
+			self.bucket_add(int(first_id), first_ip, int(first_port))
+			self.find_key(self.myid)
 
 	# infinity wait for connections
 	def control(self):
@@ -138,8 +144,7 @@ class node(object):
 		host = args[1]
 		global s_bucket
 		client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
-		#client_socket.connect((host[2], host[3]))  # Verbindung zum Server aufbauen (ip,port)
-		client_socket.create_connection((host[2], host[3]), timeout=10)
+		client_socket.connect((host[2], host[3]))  # Verbindung zum Server aufbauen (ip,port)
 
 		# send Version and to do
 		client_socket.sendall(pickle.dumps([self.myversion, "0001"]))
