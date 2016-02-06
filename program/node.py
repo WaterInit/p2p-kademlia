@@ -13,7 +13,6 @@ s_bucket = []
 class node(object):
 	def __init__(
 					self,  #
-					first_id,
 					first_ip,
 					first_port,
 					myversion="1",  # version of this product
@@ -37,8 +36,7 @@ class node(object):
 		self.thread_main.start()
 		self.stoprequest = threading.Event()
 		if not (first_ip is 0 and first_port is 0):
-			self.bucket_add(int(first_id), first_ip, int(first_port))
-			self.find_key(self.myid)
+			self.find_key(self.myid, first_ip, first_port)
 
 	# infinity wait for connections
 	def control(self):
@@ -52,6 +50,13 @@ class node(object):
 			infos = pickle.loads(connection.recv(1024))
 			version = infos[0]
 			todo = infos[1]
+			if int(todo) is 2:  # check if Host is alive
+				connection.sendall("1".encode())  # 1 = this host is alive
+				continue
+			elif int(todo) is 3:  # needs id only
+				connection.sendall(str(self.myid).encode())
+				continue
+
 			connection.sendall("0".encode())  # answer to distinguish bit-streams
 			# get contact-information ###
 			c_infos = pickle.loads(connection.recv(1024))  # Client (id,ip,port)
@@ -68,12 +73,8 @@ class node(object):
 				s_key = int(connection.recv(4).decode())  # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
 				returns = self.find_id(s_key)
 				connection.sendall(pickle.dumps(returns))  # serialize to send
-			# Client want a is-life message
-			elif int(todo) is 2:  #
-				connection.sendall("1".encod())  # 1 = this host is alive
-			# get unknown ID
-			else:  # TODO maybe do something
-				print ("error beim finden in main")
+			else:  # get unknown ID # TODO maybe do something
+				print ("received unknown todo from another Host")
 
 	# add ID to Bucket (new ID, new IP, new Port)
 	def bucket_add(self, n_id, n_ip, n_port):
@@ -138,7 +139,7 @@ class node(object):
 		return returns  # Bucket is already full
 
 	# distributet connects to other Hosts
-	# (search key, using bucket, connecting Host
+	# (search key, using bucket, connecting Host)
 	def dist_connects(self, *args):
 		s_key = args[0]
 		host = args[1]
@@ -147,7 +148,7 @@ class node(object):
 		client_socket.connect((host[2], host[3]))  # Verbindung zum Server aufbauen (ip,port)
 
 		# send Version and to do
-		client_socket.sendall(pickle.dumps([self.myversion, "0001"]))
+		client_socket.sendall(pickle.dumps([self.myversion, "1"]))
 		if int(client_socket.recv(4).decode()) is not 0:  # Antwort senden um bit-stream zu unterscheiden
 			print("Fehler")
 			return 0
@@ -210,9 +211,18 @@ class node(object):
 		self.bucket_lock.release()
 
 	# find key in network ###
-	def find_key(self, s_key):
+	def find_key(self, s_key, *first):
 		global s_bucket
+		# initialize only
+		# first[0] = init_ip
+		# first[1] = init_port
 		if s_key is self.myid:  # only at initialize
+			client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
+			client_socket.connect((first[0], first[1]))  # Verbindung zum Server aufbauen (ip,port)
+
+			client_socket.sendall(pickle.dumps([self.myversion, "3"]))
+			first_id = int(client_socket.recv(4).decode())
+			self.bucket_add(int(first_id), first[0], int(first[1]))
 			for i in range(bucket_size):
 				if len(self.bucket[i]) > 0:
 					mybucket = self.bucket[i][:]
@@ -235,7 +245,6 @@ class node(object):
 					active += 1
 				elif s_bucket[i][0] is 2:  # Host finished
 					done += 1
-			# print("active: ",str(active)," done: ",str(done)," all: ",str(len(s_bucket)),"\n bucket: ",str(s_bucket))
 			# warte = input("wait")
 			if done is len(s_bucket):  # finished
 				break
