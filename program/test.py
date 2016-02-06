@@ -4,6 +4,8 @@ import random
 import time # Threading test
 from threading import Thread
 import threading
+import socket
+
 
 
 def test(): # get random Bits
@@ -103,8 +105,17 @@ def test8(): # Threading check if running
   print (tt)
   print ("done")
 
+def test9(): # ip-connection
+	client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
+	client_socket.settimeout(3)
+	try:
+		client_socket.connect(("1.2.3.4", 1234))  # Verbindung zum Server aufbauen (ip,port)
+	except socket.timeout:
+		print ("timeout is vomint")
 
-test8();
+
+test9();
+#test8();
 #test7();
 #test6();
 #test5();

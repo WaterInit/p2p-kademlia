@@ -84,7 +84,7 @@ class node(object):
 		for i in range(len(self.bucket[distance])):  # ID already exist?
 			if self.bucket[distance][i][0] is n_id:
 				(self.bucket[distance]).append(self.bucket[distance].pop(i))
-				print (self.bucket)
+				#print ("Host alrady exist")
 				return 0
 		if len(self.bucket[distance]) < bucket_size:  # bucket not full, ID not existing
 			(self.bucket[distance]).append((n_id, n_ip, n_port))
@@ -93,7 +93,13 @@ class node(object):
 		else:  # TODO ueberlaufliste hinzufuegen
 			host = self.bucket[distance][0]
 			client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
-			client_socket.connect((host[1], host[2]))  # Verbindung zum Server aufbauen (ip,port)
+			client_socket.settimeout(8) # set timeout 8 sec
+			try:
+				client_socket.connect((host[1], host[2]))  # Verbindung zum Server aufbauen (ip,port)
+			except socket.timeout:  # Server is down
+				self.bucket[distance].pop(0)
+				(self.bucket[distance]).append((n_id, n_ip, n_port))
+				return 0
 			# send Version and to do
 			client_socket.sendall(pickle.dumps([self.myversion, "2"]))
 			if int(client_socket.recv(4).decode()) is 1:  # Server is alive
@@ -145,69 +151,84 @@ class node(object):
 		host = args[1]
 		global s_bucket
 		client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
-		client_socket.connect((host[2], host[3]))  # Verbindung zum Server aufbauen (ip,port)
+		socket.timeout(8)
+		connection_success = 1 # if connection is successed
+		try:
+			client_socket.connect((host[2], host[3]))  # Verbindung zum Server aufbauen (ip,port)
+			# send Version and to do
+			client_socket.sendall(pickle.dumps([self.myversion, "1"]))
+			if int(client_socket.recv(4).decode()) is not 0:  # Antwort senden um bit-stream zu unterscheiden
+				print("Fehler")
+				return 0
+			# send own Server [id,ip,port]
+			client_socket.sendall(pickle.dumps(
+				[self.myid, self.serveraddress[0], self.serveraddress[1]]))  # ID senden und encoden (in bytes casten)
+			if int(client_socket.recv(4).decode()) is not 0:  # Antwort senden um bit-stream zu unterscheiden
+				print("Fehler")
+				return 0
+			# send key
+			client_socket.sendall(str(s_key).encode())
+			# wait for answer
+			mybucket = pickle.loads(client_socket.recv(1024))
+		except:  # not able to connect to socket
+			# delete host from bucket
+			self.bucket_lock.acquire()
+			distance = len(bin(self.myid ^ host[1])) - 3
+			for i in range(len(self.bucket[distance])):  # ID already exist?
+				if self.bucket[distance][i][0] is host[1]:
+					print ("passt: "+str(host[1]))
+					self.bucket[distance].pop(i)
+					print (self.bucket)
+					break
+			# delete Host from searching list
+			for i in range(len(s_bucket)):
+				if s_bucket[i][1] is host[1]:
+					s_bucket.pop(i)
+					break
+			self.bucket_lock.release()
+			connection_success = 0
 
-		# send Version and to do
-		client_socket.sendall(pickle.dumps([self.myversion, "1"]))
-		if int(client_socket.recv(4).decode()) is not 0:  # Antwort senden um bit-stream zu unterscheiden
-			print("Fehler")
-			return 0
-
-		# send own Server [id,ip,port]
-		client_socket.sendall(pickle.dumps(
-			[self.myid, self.serveraddress[0], self.serveraddress[1]]))  # ID senden und encoden (in bytes casten)
-		if int(client_socket.recv(4).decode()) is not 0:  # Antwort senden um bit-stream zu unterscheiden
-			print("Fehler")
-			return 0
-
-		# send key
-		client_socket.sendall(str(s_key).encode())
-		# wait for answer
-		mybucket = pickle.loads(client_socket.recv(1024))
-		# print("mybucket: ",str(mybucket))
-		# insert into bucket
-		for i in range(len(mybucket)):
-			if mybucket[i][0] is not self.myid:  # check if Bucket own one, if not -> add
-				self.bucket_add(int(mybucket[i][0]), mybucket[i][1], int(mybucket[i][2]))
+		if connection_success is 1:
+			# insert into bucket
+			for i in range(len(mybucket)):
+				if mybucket[i][0] is not self.myid:  # check if Bucket own one, if not -> add
+					self.bucket_add(int(mybucket[i][0]), mybucket[i][1], int(mybucket[i][2]))
 		self.bucket_lock.acquire()
-		# print(mybucket)
 		for i in range(len(s_bucket)):  # change Host to done
 			if s_bucket[i][1] is host[1]:
 				s_bucket[i] = (2,) + s_bucket[i][1:]  # does following: "s_bucket[i][0] = 2"
 				# print("3: ",str(s_bucket))
 				break
-		# if s_bucket not full append new Hosts
-		while ((len(s_bucket)) < bucket_size) and ((len(mybucket)) > 0):
-			for i in range(len(mybucket)):
-				already_in = 0
-				for k in range(len(s_bucket)):  # check if Host already in
-					if (s_bucket[k][1] is mybucket[i][0]) or (mybucket[i][0] is self.myid):
-						already_in = 1
-						break
-				if already_in is 0:
-					# (new host - not used, id, ip, port)
-					s_bucket.append((0, mybucket[i][0], mybucket[i][1], mybucket[i][2]))
-				mybucket.pop(i)
-				break
-		# if s_bucket is full replace Hosts
-		if (len(mybucket)) > 0:
-			for i in range(len(s_bucket)):
-				distance = (s_bucket[i][1] ^ s_key)
-				for j in range(len(mybucket)):
-					if (mybucket[j][0] ^ s_key) < distance:  # new Host is closer
-						already_in = 0
-						for k in range(len(s_bucket)):  # check if Host already in
-							if (s_bucket[k][1] is mybucket[j][0]) or (mybucket[j][0] is self.myid):
-								already_in = 1
-								break
-						if already_in is 0:
-							s_bucket[i] = (0, mybucket[j][0], mybucket[j][1], mybucket[j][2])
-							# s_bucket[i][0] = 0 # new Host not used
-							# s_bucket[i][1] = mybucket[j][0] # id
-							# s_bucket[i][2] = mybucket[j][1] # ip
-							# s_bucket[i][3] = mybucket[j][2] # port
-						mybucket.pop(j)
-						break
+		if connection_success is 1:
+			# if s_bucket not full append new Hosts
+			while ((len(s_bucket)) < bucket_size) and ((len(mybucket)) > 0):
+				for i in range(len(mybucket)):
+					already_in = 0
+					for k in range(len(s_bucket)):  # check if Host already in
+						if (s_bucket[k][1] is mybucket[i][0]) or (mybucket[i][0] is self.myid):
+							already_in = 1
+							break
+					if already_in is 0:
+						# (new host - not used, id, ip, port)
+						s_bucket.append((0, mybucket[i][0], mybucket[i][1], mybucket[i][2]))
+					mybucket.pop(i)
+					break
+			# if s_bucket is full replace Hosts
+			if (len(mybucket)) > 0:
+				for i in range(len(s_bucket)):
+					distance = (s_bucket[i][1] ^ s_key)
+					for j in range(len(mybucket)):
+						if (mybucket[j][0] ^ s_key) < distance:  # new Host is closer
+							already_in = 0
+							for k in range(len(s_bucket)):  # check if Host already in
+								if (s_bucket[k][1] is mybucket[j][0]) or (mybucket[j][0] is self.myid):
+									already_in = 1
+									break
+							if already_in is 0:
+								# new Host - not used, id, ip, port
+								s_bucket[i] = (0, mybucket[j][0], mybucket[j][1], mybucket[j][2])
+							mybucket.pop(j)
+							break
 		self.bucket_lock.release()
 
 	# find key in network ###
