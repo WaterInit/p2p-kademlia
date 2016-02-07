@@ -1,10 +1,26 @@
-import Queue
+import queue
 from . import gpg
 from .. import tests
 
 # INIT
+# parse config file
+config_name = 'config'
+parameters = {}
+
+with open(config_name, 'r') as config_file:
+    lines = config_file.readlines()
+
+for line in lines:
+    if line.startswith('#') or line.startswith(' '):
+        continue
+    else:
+        key, value = line.partition('=')[::2]
+        parameters[key.rstrip()] = value.rstrip()
+
+print(parameters)
+
 # create DHT thread
-dht_thread = tests.DHTThread()
+dht_thread = tests.DHTThread(parameters['bootstrap_ip'], parameters['bootstrap_port'])
 dht_thread.start()
 
 thread_input_q = dht_thread.input_q
