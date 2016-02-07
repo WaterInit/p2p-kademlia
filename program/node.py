@@ -3,11 +3,13 @@ from threading import Thread
 import threading
 import socket
 import pickle
+import hashlib
 
-bucket_size = 4  # size of bucket
+bucket_size = 5  # size of bucket
 alpha = 4  # number of simultaneous connections/Threads
 # 0 = not in use, 1 = in use, 2 = finished
 s_bucket = []
+key_list = []
 
 
 class node(object):
@@ -56,6 +58,11 @@ class node(object):
 			elif int(todo) is 3:  # needs id only
 				connection.sendall(str(self.myid).encode())
 				continue
+			elif int(todo) is 4:  # get new key entry
+				connection.sendall("1".encode())  # give key
+				new_key = pickle.loads(connection.recv(1024))  # key (key_id,value)
+				self.key_add(new_key[0], new_key[1])
+				continue
 
 			connection.sendall("0".encode())  # answer to distinguish bit-streams
 			# get contact-information ###
@@ -76,6 +83,45 @@ class node(object):
 			else:  # get unknown ID # TODO maybe do something
 				print ("received unknown todo from another Host")
 
+	# add key into DHT
+	def insert_key(self, key, value):
+		# id of the key in DHT (key to 20-bit id)
+		key_id = (int((hashlib.sha1(key.encode())).hexdigest(), 16) % (2**bucket_size))
+		# find 20 clothest Hosts
+		hosts = self.find_id(key_id)
+		# check if i'm one of the 20 clothest hosts (only if there another host)
+		if len(hosts) < bucket_size:
+			self.key_add(key_id, value)  # add key in my own list
+		else:
+			far_away = 0
+			for i in range(1, len(hosts)):
+				if (hosts[i][0] ^ key_id) > (hosts[far_away][0] ^ key_id):
+					far_away = i
+			if (self.myid ^ key_id) > (hosts[far_away][0] ^ key_id): # im clother then another host
+				hosts.pop(far_away)  # remove farthest host from list
+				self.key_add(key_id, value)  # add key in my own list
+		# add key to all hosts
+		for i in range(len(hosts)):
+			try:
+				client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
+				socket.timeout(8)
+				client_socket.connect((hosts[i][1], hosts[i][2]))  # Verbindung zum Server aufbauen (ip,port)
+				# send Version and to do
+				client_socket.sendall(pickle.dumps([self.myversion, "4"]))
+				if int(client_socket.recv(4).decode()) is not 1:  # Antwort senden um bit-stream zu unterscheiden
+					print("Fehler")
+					return 0
+				# send key [key_id,value]
+				client_socket.sendall(pickle.dumps([key_id,value]))  # ID senden und encoden (in bytes casten)
+			except:  # not able to connect to socket
+				# nothing to do
+				continue
+
+	# add key in my key-list
+	def key_add(self, key, value):
+		self.keys.append((key, value))
+		print ("keys: "+str(self.keys))
+
 	# add ID to Bucket (new ID, new IP, new Port)
 	def bucket_add(self, n_id, n_ip, n_port):
 		# (((x-or um Entfernung zu kennen) in binaer umwandeln) umso laenger die binaerzahl, umso weiter entfernt)
@@ -84,16 +130,16 @@ class node(object):
 		for i in range(len(self.bucket[distance])):  # ID already exist?
 			if self.bucket[distance][i][0] is n_id:
 				(self.bucket[distance]).append(self.bucket[distance].pop(i))
-				#print ("Host alrady exist")
+				# print ("Host alrady exist")
 				return 0
 		if len(self.bucket[distance]) < bucket_size:  # bucket not full, ID not existing
 			(self.bucket[distance]).append((n_id, n_ip, n_port))
 			print (self.bucket)
 			return 0
-		else:  # TODO ueberlaufliste hinzufuegen
+		else:  # ueberlaufliste (Warteschlange)
 			host = self.bucket[distance][0]
 			client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
-			client_socket.settimeout(8) # set timeout 8 sec
+			client_socket.settimeout(8)  # set timeout 8 sec
 			try:
 				client_socket.connect((host[1], host[2]))  # Verbindung zum Server aufbauen (ip,port)
 			except socket.timeout:  # Server is down
@@ -110,18 +156,18 @@ class node(object):
 
 			return 0
 
-	# find key and return bucket with near IDs to the key ###
-	# find local entrys only ###
+	# find key and return bucket with clothest Hosts to the key ###
+	# find local entrys only
 	# first Step in search or return for another request
 	def find_id(self, key):
-		# TODO search for key in known keys
+		# search for key in known keys
 		for i in range(len(self.keys)):
-			if key is keys[i]:
-				return keys[i]
+			if key == self.keys[i][0]:
+				return self.keys[i][:]
 		# key unknown -> search in buckets
 		distance = len(bin(self.myid ^ key)) - 3
 		returns = self.bucket[distance][:]
-		if key is self.myid:  # TODO find existing node at initialize, lt. Scheuermann=Absturz ist hier egal
+		if key is self.myid:  # to_do find existing node at initialize, lt. Scheuermann=Absturz ist hier egal
 			return 1  # return error
 		if len(returns) < bucket_size:  # array ist nicht voll -> auffuellen
 			backward = 0
@@ -149,6 +195,7 @@ class node(object):
 	def dist_connects(self, *args):
 		s_key = args[0]
 		host = args[1]
+		key_list = args[2]
 		global s_bucket
 		client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
 		socket.timeout(8)
@@ -176,7 +223,6 @@ class node(object):
 			distance = len(bin(self.myid ^ host[1])) - 3
 			for i in range(len(self.bucket[distance])):  # ID already exist?
 				if self.bucket[distance][i][0] is host[1]:
-					print ("passt: "+str(host[1]))
 					self.bucket[distance].pop(i)
 					print (self.bucket)
 					break
@@ -189,6 +235,11 @@ class node(object):
 			connection_success = 0
 
 		if connection_success is 1:
+			# check if answer is a key or bucket
+			if len(mybucket) is 2:  # got the key
+				key_list.append(mybucket.pop())
+				return 0
+			# got a Bucket - no key
 			# insert into bucket
 			for i in range(len(mybucket)):
 				if mybucket[i][0] is not self.myid:  # check if Bucket own one, if not -> add
@@ -231,9 +282,18 @@ class node(object):
 							break
 		self.bucket_lock.release()
 
+	def get_key(self, key):
+		key_id = (int((hashlib.sha1(key.encode())).hexdigest(), 16) % (2**bucket_size))
+		ret = self.find_key(key_id)
+		if ret is not 0:  # key found
+			return ret
+		else:  # key not found
+			return 0
+
 	# find key in network ###
 	def find_key(self, s_key, *first):
 		global s_bucket
+		global key_list
 		# initialize only
 		# first[0] = init_ip
 		# first[1] = init_port
@@ -250,8 +310,12 @@ class node(object):
 					break
 		else:
 			mybucket = self.find_id(s_key)[:]
+			# found key? -> len(mybucket) = 2 (only id and value) and mybucket[0] is int (id of key)
+			if len(mybucket) is 2 and isinstance(mybucket[0], int):
+				return mybucket[1]
 
 		s_bucket = []  # save hosts with bit of sending here
+		key_list = []  # save key, if any found
 		threads = []  # save threads here
 		while len(mybucket) > 0:
 			buck = mybucket.pop()
@@ -261,6 +325,10 @@ class node(object):
 			active = 0  # number of active threads
 			done = 0  # number of finished threads
 			self.bucket_lock.acquire()  # threadsafe from here
+			if not len(key_list) is 0:  # found key (entry in key_list)
+				# print ("key found: "+str(key_list[0][0]))
+				# print ("value: "+str(key_list[0][1]))
+				return key_list[0][1]  # return only value of the key
 			for i in range(len(s_bucket)):
 				if s_bucket[i][0] is 1:  # Host connected
 					active += 1
@@ -279,10 +347,11 @@ class node(object):
 						# does following in a list "s_bucket[j][0] = 1"
 						s_bucket[j] = (1,) + s_bucket[j][1:]  # set to "in use"
 						break
-				threads.append(Thread(target=self.dist_connects, args=(s_key, s_bucket[mem_j])))
+				threads.append(Thread(target=self.dist_connects, args=(s_key, s_bucket[mem_j], key_list)))
 				threads[len(threads) - 1].start()
 			self.bucket_lock.release()  # threadsafe until here
 			# ready
+		return 0
 
 	# Server definieren, socket oeffnen
 	def server(self, *todo):  # first arg = what to do, second arg = optional socket-object

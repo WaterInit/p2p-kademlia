@@ -6,6 +6,9 @@ from threading import Thread
 import threading
 import socket
 
+import hashlib
+import binascii
+
 
 
 def test(): # get random Bits
@@ -113,8 +116,32 @@ def test9(): # ip-connection
 	except socket.timeout:
 		print ("timeout is vomint")
 
+def test10():
+  s_str="tt"
+  s_bin = ''.join(format(ord(x), 'b') for x in s_str)
+  print (s_bin)
+  print (len(s_bin))
 
-test9();
+def test10_1():
+  #print(hashlib.algorithms_available)
+  #print(hashlib.algorithms_guaranteed)
+  key_val="vogtmart@informatik.hu-berlin.de"
+  ha=(int((hashlib.sha1(key_val.encode())).hexdigest(), 16) % (2**20))
+  print (ha)
+  print (bin(ha))
+  #print (len(ha))
+  #print (binascii.unhexlify(ha))
+
+
+def test11():
+  x = NULL
+  print (x)
+
+
+
+test10_1();
+#test10();
+#test9();
 #test8();
 #test7();
 #test6();

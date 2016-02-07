@@ -14,9 +14,17 @@ def main():
 
 	while True:
 		user_todo = input("")
-		ret = knoten.action(user_todo)
-		if ret == 1:  # beenden
-			break
+		if user_todo == "put":
+			print("insert key")
+			key = input("")
+			knoten.insert_key(key, key)
+		elif user_todo == "get":
+			print("get key")
+			key = input("")
+			ret = knoten.get_key(key)
+			print(ret)
+		else:
+			print (user_todo)
 
 
 main()
