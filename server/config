@@ -1,0 +1,13 @@
+#################################
+###### DHT SKS config file ######
+#################################
+
+# sks mode - if turned on the server will act as keyserver
+sks=True
+
+# DHT mode - if turned on the server will participate in DHT
+dht=True
+
+# DHT entry point
+bootstrap_ip=141.20.192.117
+bootstrap_port=1337

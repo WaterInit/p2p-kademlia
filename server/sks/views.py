@@ -43,7 +43,11 @@ def lookup(request):
     elif operation == 'index':
         # SEARCH FOR KEY
 
-        key_id = search_string
+        if search_string.startswith('0x'):
+            key_id = search_string.split('x')[1]
+        else:
+            key_id = search_string
+
         info = database.get_metadata(key_id)
 
         if info is not None:
