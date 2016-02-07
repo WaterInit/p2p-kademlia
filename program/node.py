@@ -5,7 +5,8 @@ import socket
 import pickle
 import hashlib
 
-bucket_size = 5  # size of bucket
+bucket_size = 20  # size of bucket
+bucket_width = 20
 alpha = 4  # number of simultaneous connections/Threads
 # 0 = not in use, 1 = in use, 2 = finished
 s_bucket = []
@@ -19,7 +20,7 @@ class node(object):
 					first_port,
 					myversion="1",  # version of this product
 					myid=random.getrandbits(bucket_size),  # id of node (1 .. 1.048.575) as (20-) bitstring
-					bucket=[[] for x in range(bucket_size)],  # 20 buckets to store respectively 20 nodes
+					bucket=[[] for x in range(bucket_width)],  # 20 buckets to store respectively 20 nodes
 					# bucket[bucket-nr][list of (id,ip,port)]
 					# niedriger Wert im Bucket = sehr nahe
 					# hoher Wert im Bucket = weit entfernt
@@ -68,7 +69,6 @@ class node(object):
 			# get contact-information ###
 			c_infos = pickle.loads(connection.recv(1024))  # Client (id,ip,port)
 			connection.sendall("0".encode())  # answer to distinguish bit-streams
-			self.bucket_add(c_infos[0], c_infos[1], c_infos[2])  # ID hinzufuegen
 
 			# test case ###
 			if int(todo) is 0:
@@ -83,6 +83,9 @@ class node(object):
 			else:  # get unknown ID # TODO maybe do something
 				print ("received unknown todo from another Host")
 
+			# add Host to local Bucket
+			self.bucket_add(c_infos[0], c_infos[1], c_infos[2])  # ID hinzufuegen
+
 	# add key into DHT
 	def insert_key(self, key, value):
 		# id of the key in DHT (key to 20-bit id)
@@ -92,6 +95,7 @@ class node(object):
 		# check if i'm one of the 20 clothest hosts (only if there another host)
 		if len(hosts) < bucket_size:
 			self.key_add(key_id, value)  # add key in my own list
+			print("change it")
 		else:
 			far_away = 0
 			for i in range(1, len(hosts)):
@@ -119,6 +123,10 @@ class node(object):
 
 	# add key in my key-list
 	def key_add(self, key, value):
+		# check if key already in list
+		for i in range(len(self.keys)):
+			if self.keys[i][0] == key:
+				return 0
 		self.keys.append((key, value))
 		print ("keys: "+str(self.keys))
 
@@ -248,7 +256,6 @@ class node(object):
 		for i in range(len(s_bucket)):  # change Host to done
 			if s_bucket[i][1] is host[1]:
 				s_bucket[i] = (2,) + s_bucket[i][1:]  # does following: "s_bucket[i][0] = 2"
-				# print("3: ",str(s_bucket))
 				break
 		if connection_success is 1:
 			# if s_bucket not full append new Hosts
@@ -326,8 +333,6 @@ class node(object):
 			done = 0  # number of finished threads
 			self.bucket_lock.acquire()  # threadsafe from here
 			if not len(key_list) is 0:  # found key (entry in key_list)
-				# print ("key found: "+str(key_list[0][0]))
-				# print ("value: "+str(key_list[0][1]))
 				return key_list[0][1]  # return only value of the key
 			for i in range(len(s_bucket)):
 				if s_bucket[i][0] is 1:  # Host connected
@@ -357,11 +362,9 @@ class node(object):
 	def server(self, *todo):  # first arg = what to do, second arg = optional socket-object
 		server_address = (socket.gethostname(), 0)
 		if todo[0] is 'open':
-			# print ("laeuft") # testen (server gestartet)
 			listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
 			listen_socket.bind(server_address)  # socket an IP und Port binden
 			listen_socket.listen(5)  # socket als listen definieren
-			# print (listen_socket.getsockname())
 			self.serveraddress = listen_socket.getsockname()
 			return listen_socket
 
