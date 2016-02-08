@@ -368,7 +368,7 @@ class node(object):
 		server_address = (socket.gethostname(), 0)
 		if todo[0] is 'open':
 			listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
-			listen_socket.bind(server_address)  # socket an IP und Port binden
+			listen_socket.bind(('', 0))  # socket an IP und Port binden
 			listen_socket.listen(5)  # socket als listen definieren
 			self.serveraddress = listen_socket.getsockname()
 			return listen_socket
