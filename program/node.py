@@ -4,6 +4,8 @@ import threading
 import socket
 import pickle
 import hashlib
+import binascii
+import sys
 
 
 bucket_size = 40  # size of bucket
@@ -66,10 +68,28 @@ class node(object):
 				connection.sendall(str(self.myid).encode())
 				continue
 			elif int(todo) is 4:  # get new key entry
+				'''
 				connection.sendall("1".encode())  # give key
 				new_key = pickle.loads(connection.recv(1024))  # key (key_id,value)
 				self.key_add(new_key[0], new_key[1])
 				continue
+				'''
+				connection.sendall("1".encode())  # give key
+				#input_length = pickle.loads(connection.recv(1024))
+				#connection.sendall("1".encode())  # give key
+				#print("input_length: "+str(input_length))
+				new_key2 = b''
+				d = True
+				l = 100
+				while d:
+					d = (connection.recv(8192))  # key (key_id,value)
+					new_key2 += d
+				print("kkk: "+str(new_key2))
+				new_key = pickle.loads(new_key2)
+				print("DEBUG: new_key: "+str(new_key))
+				self.key_add(new_key[0], new_key[1])
+				continue
+
 
 			connection.sendall("0".encode())  # answer to distinguish bit-streams
 			# get contact-information ###
@@ -84,6 +104,7 @@ class node(object):
 			# Client is searching key. return key or clother hosts ###
 			elif int(todo) is 1:
 				s_key = int(connection.recv(1024).decode())  # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
+				print("DEBUG: "+str(s_key))
 				returns = self.find_id(s_key)
 				connection.sendall(pickle.dumps(returns))  # serialize to send
 			else:  # get unknown to_do # TODO maybe do something
@@ -124,6 +145,7 @@ class node(object):
 				client_socket.sendall(pickle.dumps([key_id, value]))  # ID senden und encoden (in bytes casten)
 			except:  # not able to connect to socket
 				# nothing to do
+
 				continue
 
 	# add key in my key-list
@@ -233,7 +255,15 @@ class node(object):
 			# send key
 			client_socket.sendall(str(s_key).encode())
 			# wait for answer
-			mybucket = pickle.loads(client_socket.recv(1024))
+			d = True
+			new_key2 = ""
+			while d:
+				d = (client_socket.recv(8192))  # key (key_id,value)
+				new_key2 += d
+				print("DEBUG data: "+str(d))
+			mybucket = pickle.loads(new_key2)
+			#mybucket = pickle.loads(client_socket.recv(8192))
+
 		except:  # not able to connect to socket
 			# delete host from bucket
 			self.bucket_lock.acquire()
