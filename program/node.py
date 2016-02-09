@@ -5,7 +5,6 @@ import socket
 import pickle
 import hashlib
 
-from application import thread_input_q, thread_output_q
 
 bucket_size = 40  # size of bucket
 bucket_width = 20
@@ -37,12 +36,12 @@ class node(object):
 		self.bucket_lock = bucket_lock
 		self.serveraddress = serveraddress
 		self.listen_socket = self.server("open")  # listen socket
-		# start thread for incomming Messages from another node
+		# start thread for incoming Messages from another node
 		self.thread_main = Thread(target=self.control, args=())
 		self.thread_main.start()
 		# start thread for input from application
-		self.thread_action = Thread(target=self.action, args=())
-		self.thread_action.start()
+		#self.thread_action = Thread(target=self.action, args=())
+		#self.thread_action.start()
 		self.stoprequest = threading.Event()
 		if not (first_ip is 0 and first_port is 0):
 			self.find_key(self.myid, first_ip, first_port)
@@ -400,15 +399,3 @@ class node(object):
 			else:
 				print (user_todo)
 			'''
-			key = 0
-			key = thread_input_q.get()
-			if key is not 0:
-				if key[0] == "put":  # insert in DHT
-					pgp_entry = self.insert_key(key[1], key[2])
-					thread_output_q([pgp_entry])
-				if key[0] == "get":  # insert in DHT
-					pgp_entry = self.get_key(key[1])
-					if pgp_entry is 0:  # not found
-						thread_output_q([0, "not found"])
-					else:
-						thread_output_q([1, pgp_entry])
