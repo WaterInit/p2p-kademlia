@@ -40,11 +40,12 @@ class node(object):
 		self.thread_main = Thread(target=self.control, args=())
 		self.thread_main.start()
 		# start thread for input from application
-		#self.thread_action = Thread(target=self.action, args=())
-		#self.thread_action.start()
+		self.thread_action = Thread(target=self.action, args=())
+		self.thread_action.start()
 		self.stoprequest = threading.Event()
 		if not (first_ip is 0 and first_port is 0):
 			self.find_key(self.myid, first_ip, first_port)
+		print(self.myid, self.listen_socket.getsockname()[0], self.listen_socket.getsockname()[1])
 
 	# infinity wait for connections
 	def control(self):
@@ -387,7 +388,6 @@ class node(object):
 	# some actions (like "stop server")
 	def action(self):
 		while True:
-			'''
 			user_todo = input("")
 			if user_todo == "put":
 				key = input("")
@@ -398,4 +398,3 @@ class node(object):
 				print(ret)
 			else:
 				print (user_todo)
-			'''
