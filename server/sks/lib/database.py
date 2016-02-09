@@ -1,5 +1,5 @@
 import queue
-from . import gpg
+from . import gpg, DHTThread
 from .. import tests
 
 # INIT
@@ -17,10 +17,10 @@ for line in lines:
         key, value = line.partition('=')[::2]
         parameters[key.rstrip()] = value.rstrip()
 
-print(parameters)
+# print(parameters)
 
 # create DHT thread
-dht_thread = tests.DHTThread(parameters['bootstrap_ip'], parameters['bootstrap_port'])
+dht_thread = DHTThread.DHTThread(str(parameters['bootstrap_ip']), parameters['bootstrap_port'])
 dht_thread.start()
 
 thread_input_q = dht_thread.input_q
@@ -28,6 +28,7 @@ thread_output_q = dht_thread.output_q
 
 temp_file = 'temp_file.asc'
 
+print("database ready")
 
 # DHT ACCESS
 # get pgp key identified by <id>
@@ -49,6 +50,8 @@ def insert_key(key):
 
     thread_input_q.put(['put', key_id, key])
     code = thread_output_q.get()
+
+    print("Exit code: " + str(code))
 
     return code
 
