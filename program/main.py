@@ -10,8 +10,8 @@ def main():
 		knoten = node(0, 0)
 	# initialize end ###
 
-	while True:
-		user_todo = input("")
+	#while True:
+		#user_todo = input("")
 
 
 main()
