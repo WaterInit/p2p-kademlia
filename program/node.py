@@ -111,7 +111,7 @@ class node(object):
 				print ("received unknown todo from another Host")
 
 			# add Host to local Bucket
-			self.bucket_add(c_infos[0], c_infos[1], c_infos[2])  # ID hinzufuegen
+			self.bucket_add(c_infos[0], client_address[0], c_infos[2])  # ID hinzufuegen
 
 	# add key into DHT
 	def insert_key(self, key, value):
