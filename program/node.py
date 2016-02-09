@@ -45,7 +45,7 @@ class node(object):
 		self.thread_action = Thread(target=self.action, args=())
 		self.thread_action.start()
 		self.stoprequest = threading.Event()
-		if not (first_ip is 0 and first_port is 0):
+		if int(first_port) != 0:
 			self.find_key(self.myid, first_ip, first_port)
 		print(self.myid, self.listen_socket.getsockname()[0], self.listen_socket.getsockname()[1])
 
@@ -147,6 +147,7 @@ class node(object):
 				# nothing to do
 
 				continue
+		return 0
 
 	# add key in my key-list
 	def key_add(self, key, value):
@@ -346,7 +347,7 @@ class node(object):
 		# first[1] = init_port
 		if s_key is self.myid:  # only at initialize
 			client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
-			client_socket.connect((first[0], first[1]))  # Verbindung zum Server aufbauen (ip,port)
+			client_socket.connect((first[0], int(first[1])))  # Verbindung zum Server aufbauen (ip,port)
 
 			client_socket.sendall(pickle.dumps([self.myversion, "3"]))
 			first_id = int(client_socket.recv(1024).decode())
