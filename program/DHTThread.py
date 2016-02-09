@@ -25,8 +25,7 @@ class DHTThread(threading.Thread):
 	def run(self):
 		while True:
 			print("Waiting for requests...")
-			#key = self.input_q.get()
-			key = input("")
+			key = self.input_q.get()
 			print("Processing request.")
 
 			if key[0] == "put":  # insert in DHT
