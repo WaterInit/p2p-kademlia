@@ -1,6 +1,8 @@
+#!/usr/bin/python3
+
 #from django.test import TestCase
 import threading
-import Queue
+import queue
 from node import node
 
 
@@ -11,8 +13,8 @@ class DHTThread(threading.Thread):
 		print("Init DHTThread")
 		super(DHTThread, self).__init__()
 
-		self.input_q = Queue.Queue(1)
-		self.output_q = Queue.Queue(1)
+		self.input_q = queue.Queue(1)
+		self.output_q = queue.Queue(1)
 		self.ip = ip
 		self.port = port
 
@@ -23,7 +25,8 @@ class DHTThread(threading.Thread):
 	def run(self):
 		while True:
 			print("Waiting for requests...")
-			key = self.input_q.get()
+			#key = self.input_q.get()
+			key = input("")
 			print("Processing request.")
 
 			if key[0] == "put":  # insert in DHT
