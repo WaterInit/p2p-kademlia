@@ -104,9 +104,13 @@ class node(object):
 			# Client is searching key. return key or clother hosts ###
 			elif int(todo) is 1:
 				s_key = int(connection.recv(1024).decode())  # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
-				print("DEBUG: "+str(s_key))
+				#print("DEBUG: "+str(s_key))
 				returns = self.find_id(s_key)
+				#print("DEBUG key: "+str(s_key))
+				print("DEBUG returns: "+str(returns))
+				print("DEBUG pickle-return: "+str(pickle.dumps(returns)))
 				connection.sendall(pickle.dumps(returns))  # serialize to send
+				print("DEBUG done")
 			else:  # get unknown to_do # TODO maybe do something
 				print ("received unknown todo from another Host")
 
@@ -240,6 +244,7 @@ class node(object):
 		client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # socket initialisieren
 		socket.timeout(8)
 		connection_success = 1  # if connection is successed
+		new_key2 = b''
 		try:
 			client_socket.connect((host[2], host[3]))  # Verbindung zum Server aufbauen (ip,port)
 			# send Version and to do
@@ -257,13 +262,19 @@ class node(object):
 			client_socket.sendall(str(s_key).encode())
 			# wait for answer
 			d = True
-			new_key2 = ""
+			l = 100
+			print("ssss")
+			client_socket.settimeout(1)
 			while d:
-				d = (client_socket.recv(8192))  # key (key_id,value)
+				d = (client_socket.recv(1024))  # key (key_id,value)
 				new_key2 += d
-				print("DEBUG data: "+str(d))
+				print("DEBUG data: "+str(new_key2))
 			mybucket = pickle.loads(new_key2)
-			#mybucket = pickle.loads(client_socket.recv(8192))
+			print("DEBUG mybucket: "+str(mybucket))
+
+		except socket.timeout:
+			mybucket = pickle.loads(new_key2)
+			print("DEBUG mybucket: "+str(mybucket))
 
 		except:  # not able to connect to socket
 			# delete host from bucket
@@ -284,8 +295,11 @@ class node(object):
 
 		if connection_success is 1:
 			# check if answer is a key or bucket
-			if isinstance(mybucket, tuple):
 			#if len(mybucket) is 2:  # got the key
+			print("DEBUG bis hier")
+			# TODO checken ob liste und wie groß (Ausgabe) usw.
+			if isinstance(mybucket, list) and len(mybucket) is 2:
+				print("DBEUG klappt")
 				key_list.append(mybucket)
 				return 0
 			# got a Bucket - no key
@@ -361,7 +375,6 @@ class node(object):
 			# found key? -> len(mybucket) = 2 (only id and value) and mybucket[0] is int (id of key)
 			if len(mybucket) is 2 and isinstance(mybucket[0], int):
 				return mybucket[1]
-
 		s_bucket = []  # save hosts with bit of sending here
 		key_list = []  # save key, if any found
 		threads = []  # save threads here
@@ -394,6 +407,7 @@ class node(object):
 						# does following in a list "s_bucket[j][0] = 1"
 						s_bucket[j] = (1,) + s_bucket[j][1:]  # set to "in use"
 						break
+				print("2")
 				threads.append(Thread(target=self.dist_connects, args=(s_key, s_bucket[mem_j], key_list)))
 				threads[len(threads) - 1].start()
 			# ready
