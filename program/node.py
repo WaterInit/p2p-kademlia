@@ -84,9 +84,8 @@ class node(object):
 				while d:
 					d = (connection.recv(8192))  # key (key_id,value)
 					new_key2 += d
-				print("kkk: "+str(new_key2))
 				new_key = pickle.loads(new_key2)
-				print("DEBUG: new_key: "+str(new_key))
+				#print("DEBUG: new_key: "+str(new_key))
 				self.key_add(new_key[0], new_key[1])
 				continue
 
@@ -99,7 +98,7 @@ class node(object):
 			# test case ###
 			if int(todo) is 0:
 				s_key = int(connection.recv(4).decode())  # erhalte 20 Bytes (20-stellige ID des keys) und decode diese
-				print ("erhaltene Daten: ", s_key)  # test (erhaltene ID ausgeben)
+				#print ("erhaltene Daten: ", s_key)  # test (erhaltene ID ausgeben)
 				print (self.bucket)  # print complete bucket
 			# Client is searching key. return key or clother hosts ###
 			elif int(todo) is 1:
@@ -107,10 +106,10 @@ class node(object):
 				#print("DEBUG: "+str(s_key))
 				returns = self.find_id(s_key)
 				#print("DEBUG key: "+str(s_key))
-				print("DEBUG returns: "+str(returns))
-				print("DEBUG pickle-return: "+str(pickle.dumps(returns)))
+				#print("DEBUG returns: "+str(returns))
+				#print("DEBUG pickle-return: "+str(pickle.dumps(returns)))
 				connection.sendall(pickle.dumps(returns))  # serialize to send
-				print("DEBUG done")
+				#print("DEBUG done")
 			else:  # get unknown to_do # TODO maybe do something
 				print ("received unknown todo from another Host")
 
@@ -263,18 +262,17 @@ class node(object):
 			# wait for answer
 			d = True
 			l = 100
-			print("ssss")
 			client_socket.settimeout(1)
 			while d:
 				d = (client_socket.recv(1024))  # key (key_id,value)
 				new_key2 += d
-				print("DEBUG data: "+str(new_key2))
+				#print("DEBUG data: "+str(new_key2))
 			mybucket = pickle.loads(new_key2)
-			print("DEBUG mybucket: "+str(mybucket))
+			#print("DEBUG mybucket: "+str(mybucket))
 
 		except socket.timeout:
 			mybucket = pickle.loads(new_key2)
-			print("DEBUG mybucket: "+str(mybucket))
+			#print("DEBUG mybucket: "+str(mybucket))
 
 		except:  # not able to connect to socket
 			# delete host from bucket
@@ -296,17 +294,18 @@ class node(object):
 		if connection_success is 1:
 			# check if answer is a key or bucket
 			#if len(mybucket) is 2:  # got the key
-			print("DEBUG bis hier")
+			#print("DEBUG bis hier")
 			# TODO checken ob liste und wie groß (Ausgabe) usw.
-			if isinstance(mybucket, list) and len(mybucket) is 2:
-				print("DBEUG klappt")
+			if len(mybucket) is 2 and isinstance(mybucket[1], str):
+				#print("DBEUG klappt")
 				key_list.append(mybucket)
 				return 0
 			# got a Bucket - no key
 			# insert into bucket
+			#print("DEBUG mybucket before: "+str(mybucket))
 			for i in range(len(mybucket)):
 				if mybucket[i][0] is not self.myid:  # check if Bucket own one, if not -> add
-					self.bucket_add(int(mybucket[i][0]), mybucket[i][1], int(mybucket[i][2]))
+						self.bucket_add(int(mybucket[i][0]), mybucket[i][1], int(mybucket[i][2]))
 		self.bucket_lock.acquire()
 		for i in range(len(s_bucket)):  # change Host to done
 			if s_bucket[i][1] is host[1]:
@@ -407,7 +406,6 @@ class node(object):
 						# does following in a list "s_bucket[j][0] = 1"
 						s_bucket[j] = (1,) + s_bucket[j][1:]  # set to "in use"
 						break
-				print("2")
 				threads.append(Thread(target=self.dist_connects, args=(s_key, s_bucket[mem_j], key_list)))
 				threads[len(threads) - 1].start()
 			# ready
